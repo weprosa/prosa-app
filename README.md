@@ -1,56 +1,76 @@
-# Welcome to your Expo app 👋
+# Prosa (app)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App iOS e Android do **Prosa**, um app para conhecer pessoas em que a afinidade vem antes da foto.
 
-## Get started
+> Antes do rosto, a pessoa.
 
-1. Install dependencies
+## O que é o Prosa
 
-   ```bash
-   npm install
-   ```
+A ideia lembra o Tinder, com uma diferença: antes de ver qualquer perfil, você passa por um onboarding e responde a uma série de perguntas (por exemplo, o que gosta de fazer). Com essas respostas, a IA monta uma análise do seu perfil e procura pessoas com perfil parecido. Só quando o match acontece você recebe as fotos, e a partir daí pode conversar, trocar fotos e marcar encontros.
 
-2. Start the app
+O objetivo atual é um **MVP funcional**.
 
-   ```bash
-   npx expo start
-   ```
+## Equipe e repositórios
 
-In the output, you'll find options to open the app in a
+Cada parte tem seu repositório, lado a lado na pasta `prosa/`:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Parte    | Tecnologia          | Repositório        |
+| -------- | ------------------- | ------------------ |
+| App      | Expo + React Native | `prosa-app` (este) |
+| Back-end | PHP + Laravel       | a criar            |
+| IA       | a definir           | a criar            |
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+O app fala só com o back-end; a IA fica atrás dele.
 
-## Get a fresh project
+## Estado atual
 
-When you're ready, run:
+- Projeto configurado: Expo SDK 58, React Native 0.88, Expo Router, TypeScript estrito, React Compiler.
+- Design system em `src/design-system` (tokens e componentes).
+- Três telas: boas-vindas, entrar e criar conta, com validação de formulário.
+- Permissões de localização (em uso) e câmera/fotos declaradas em `app.config.ts`.
+
+Ainda não existe: back-end (o envio dos formulários responde "não foi possível conectar"), login com Google/Apple, recuperação de senha, onboarding, ícone e logotipo próprios, identificadores do app nas lojas.
+
+## Como rodar
+
+Requisitos: Node 22.13 ou mais novo (LTS 22 ou 24).
 
 ```bash
-npm run reset-project
+npm install
+cp .env.example .env.local
+npm start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Com o servidor rodando, abra no celular com o [Expo Go](https://expo.dev/go) (leia o QR code), ou pressione `i` (simulador iOS, exige Xcode), `a` (emulador Android, exige Android Studio) ou `w` (preview no navegador).
 
-### Other setup steps
+Quando entrar uma biblioteca nativa que o Expo Go não traz, será preciso um development build: `npx eas-cli@latest build --profile development`.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Comandos
 
-## Learn more
+| Comando          | O que faz                                   |
+| ---------------- | ------------------------------------------- |
+| `npm start`      | Servidor de desenvolvimento                 |
+| `npm run check`  | Typecheck, lint e verificação de formatação |
+| `npm run format` | Formata o código com Prettier               |
+| `npm run doctor` | Diagnostica dependências e configuração     |
 
-To learn more about developing your project with Expo, look at the following resources:
+Para instalar pacotes use sempre `npx expo install <pacote>`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Estrutura
 
-## Join the community
+```
+src/
+  app/             Rotas (Expo Router). Só roteamento.
+  features/        Telas e lógica por área (hoje: auth).
+  design-system/   Tokens e componentes de UI.
+  lib/             API, sessão, permissões, env.
+docs/adr/          Decisões de arquitetura (ADRs).
+app.config.ts      Configuração do app, plugins e textos de permissão.
+```
 
-Join our community of developers creating universal apps.
+## Documentação
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [AGENTS.md](AGENTS.md): regras e limites para quem (ou o que) escreve código aqui. `CLAUDE.md` aponta para ele.
+- [PRODUCT.md](PRODUCT.md): o produto, seus princípios e o que ainda não foi decidido.
+- [DESIGN.md](DESIGN.md): o design system.
+- [docs/adr/](docs/adr/README.md): decisões de arquitetura.
