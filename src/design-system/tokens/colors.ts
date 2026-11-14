@@ -15,6 +15,9 @@ const palette = {
   coral500: '#D64A4E',
   coral600: '#C2363C',
   red700: '#B3261E',
+  green700: '#1E6B3A',
+  green50: '#EDF7F0',
+  red50: '#FCEEEE',
 } as const;
 
 export const colors = {
@@ -37,6 +40,14 @@ export const colors = {
   divider: palette.ink100,
 
   danger: palette.red700,
+  dangerBackground: palette.red50,
+  // 6.4:1 sobre green50.
+  success: palette.green700,
+  successBackground: palette.green50,
+  /** Trilho de barras de progresso. */
+  track: palette.ink100,
+  /** Fundo atrás de folhas e modais. */
+  overlay: 'rgba(26, 26, 26, 0.4)',
 } as const;
 
 export type ColorToken = keyof typeof colors;
