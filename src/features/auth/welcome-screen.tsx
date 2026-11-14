@@ -14,15 +14,12 @@ export function WelcomeScreen() {
 
       <View style={styles.hero}>
         <Text variant="display" accessibilityRole="header">
-          Antes do rosto,{'\n'}
+          Antes da “aparência”,{'\n'}
           <Text variant="displayItalic" color="primary">
             a pessoa.
           </Text>
         </Text>
-        <Text color="textSecondary">
-          Um app de namoro para quem gosta de conversa. Você se apresenta pelo que conta, e a gente
-          encontra quem combina com isso.
-        </Text>
+        <Text color="textSecondary">O último app de relacionamento que você vai usar na vida.</Text>
       </View>
 
       <View style={styles.actions}>

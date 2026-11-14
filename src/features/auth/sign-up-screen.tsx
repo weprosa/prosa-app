@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Screen, spacing, Text, TextField, type TextFieldRef } from '@/design-system';
+import { Button, Screen, showToast, spacing, TextField, type TextFieldRef } from '@/design-system';
 
 import { authErrorMessage, authFieldErrors, signUp } from './auth-service';
 import { AuthFooter } from './components/auth-footer';
@@ -32,8 +32,15 @@ export function SignUpScreen() {
 
   const mutation = useMutation({
     mutationFn: signUp,
-    onError: (error) => setErrors(authFieldErrors(error)),
-    // TODO: navegar para o onboarding quando a rota existir.
+    onError: (error) => {
+      const fieldErrors = authFieldErrors(error);
+      setErrors(fieldErrors);
+      if (Object.keys(fieldErrors).length === 0) {
+        showToast({ tone: 'error', title: authErrorMessage(error) });
+      }
+    },
+    onSuccess: (user) =>
+      router.replace({ pathname: '/sign-in', params: { created: '1', email: user.email } }),
   });
 
   const submit = () => {
@@ -114,11 +121,6 @@ export function SignUpScreen() {
       </View>
 
       <View style={styles.actions}>
-        {mutation.isError ? (
-          <Text variant="bodySmall" color="danger" accessibilityLiveRegion="polite">
-            {authErrorMessage(mutation.error)}
-          </Text>
-        ) : null}
         <Button label="Criar conta" loading={mutation.isPending} onPress={submit} />
         <SocialSignIn />
       </View>

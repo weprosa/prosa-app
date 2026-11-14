@@ -14,6 +14,7 @@ export const spacing = {
 export const radii = {
   field: 14,
   pill: 999,
+  sheet: 24,
 } as const;
 
 export const sizes = {

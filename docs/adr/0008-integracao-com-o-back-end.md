@@ -20,9 +20,12 @@ Já vale para o app:
 
 Proposto, a confirmar com o back-end:
 
-- Autenticação por token (Laravel Sanctum), enviado como `Authorization: Bearer`.
-- Rotas `POST /auth/login` e `POST /auth/register`, respondendo `{ "token": "..." }`.
-- Erros de validação no formato padrão do Laravel (422 com `message` e `errors` por campo), que o cliente já entende.
+Confirmado (doc OpenAPI "Prosa API 0.0.1", 2026-11-14):
+
+- Base: `https://prosa-api-production-xrtdnk.laravel.cloud/api` (health check em `/up`). Em `.env` para dev e em `eas.json` para os builds.
+- `POST /v1/auth/register` (201) e `POST /v1/auth/login` (200) respondem `{ user, token: { access_token, token_type: "Bearer", expires_in } }`. Token enviado como `Authorization: Bearer`.
+- Erros: 422 com `message`, `code` e `errors` por campo; login inválido é 401 `invalid_credentials`.
+- Existem também `GET /v1/auth/user`, `POST /v1/auth/refresh`, `POST /v1/auth/logout`, verificação de e-mail e redefinição de senha, ainda não usados pelo app.
 - Login com Google e Apple: o fluxo depende do back-end. Os botões existem nas telas, sem ação.
 
 ## Consequências

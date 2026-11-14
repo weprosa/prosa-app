@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
   Button,
+  showToast,
   Screen,
   spacing,
-  Text,
   TextField,
   TextLink,
   type TextFieldRef,
@@ -22,15 +22,33 @@ import { compactErrors, validateEmail, validatePassword } from './validation';
 type Errors = Partial<Record<'email' | 'password', string>>;
 
 export function SignInScreen() {
-  const [email, setEmail] = useState('');
+  const params = useLocalSearchParams<{ created?: string; email?: string }>();
+  const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const passwordRef = useRef<TextFieldRef>(null);
 
+  // Vindo do cadastro: confirma uma vez que a conta foi criada.
+  useEffect(() => {
+    if (params.created !== '1') return;
+    showToast({
+      tone: 'success',
+      title: 'Conta criada!',
+      message: 'Agora entre com seu e-mail e senha para continuar.',
+    });
+    router.setParams({ created: undefined });
+  }, [params.created]);
+
   const mutation = useMutation({
     mutationFn: signIn,
-    onError: (error) => setErrors(authFieldErrors(error)),
-    // TODO: navegar para o onboarding quando a rota existir.
+    onError: (error) => {
+      const fieldErrors = authFieldErrors(error);
+      setErrors(fieldErrors);
+      if (Object.keys(fieldErrors).length === 0) {
+        showToast({ tone: 'error', title: authErrorMessage(error) });
+      }
+    },
+    onSuccess: () => router.replace('/onboarding/profile'),
   });
 
   const submit = () => {
@@ -92,11 +110,6 @@ export function SignInScreen() {
       </View>
 
       <View style={styles.actions}>
-        {mutation.isError ? (
-          <Text variant="bodySmall" color="danger" accessibilityLiveRegion="polite">
-            {authErrorMessage(mutation.error)}
-          </Text>
-        ) : null}
         <Button label="Entrar" loading={mutation.isPending} onPress={submit} />
         <SocialSignIn />
       </View>

@@ -113,6 +113,24 @@ Linha de 1px, com rótulo opcional no meio ("ou").
 
 A marca "Prosa" em texto. Substituir por logotipo quando existir.
 
+### ChipGroup
+
+Escolha única entre poucas opções, em pílulas que quebram linha (altura de toque 48). Selecionada: fundo `primary`, texto `textOnPrimary`.
+
+### SelectField
+
+Campo com a aparência do TextField que abre uma folha inferior com a lista de opções (`FlatList`). Use para listas longas, como idade.
+
+### ProgressSteps
+
+Barra segmentada de fluxos em etapas (onboarding). Segmentos feitos em `primary`, restantes em `track`.
+
+### Toast
+
+Aviso passageiro no topo (`showToast({ tone, title, message })`, 4 s, toque fecha). `success` ou `error` (erro que não é de campo). `<ToastHost />` fica na raiz.
+
+TextField aceita `icon` (Ionicons) decorativo à esquerda. Com `secureTextEntry`, mostra sozinho o botão de olho para mostrar/ocultar a senha.
+
 ## Do's and Don'ts
 
 ### Do:
