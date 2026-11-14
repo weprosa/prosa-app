@@ -1,5 +1,5 @@
 import { api, ApiError, NetworkError } from '@/lib/api/client';
-import { saveSessionToken } from '@/lib/session';
+import { saveSession } from '@/lib/session';
 
 // Contrato confirmado pela doc OpenAPI do back-end (Prosa API 0.0.1). Ver docs/adr/0008.
 export type User = {
@@ -20,12 +20,14 @@ export type SignUpInput = { name: string; email: string; password: string };
 
 async function startSession({ user, token }: AuthResponse) {
   if (!token.access_token) throw new Error('Token ausente na resposta de autenticação.');
-  await saveSessionToken(token.access_token);
+  await saveSession(token.access_token, token.expires_in);
   return user;
 }
 
 export async function signIn(input: SignInInput) {
-  return startSession(await api<AuthResponse>('/v1/auth/login', { method: 'POST', body: input }));
+  return startSession(
+    await api<AuthResponse>('/v1/auth/login', { method: 'POST', body: input, auth: false }),
+  );
 }
 
 /** Cria a conta. Não abre sessão: a pessoa é levada para entrar com a conta nova. */
@@ -33,6 +35,7 @@ export async function signUp(input: SignUpInput) {
   const { user } = await api<AuthResponse>('/v1/auth/register', {
     method: 'POST',
     body: { ...input, password_confirmation: input.password },
+    auth: false,
   });
   return user;
 }

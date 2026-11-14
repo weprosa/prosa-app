@@ -1,1 +1,1 @@
-export { WelcomeScreen as default } from '@/features/auth/welcome-screen';
+export { SessionGate as default } from '@/features/auth/session-gate';
