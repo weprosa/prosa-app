@@ -29,6 +29,10 @@ Confirmado (doc OpenAPI "Prosa API 0.0.1", 2026-11-14):
 - Existem também `GET /v1/auth/user`, `POST /v1/auth/refresh`, `POST /v1/auth/logout`, verificação de e-mail e redefinição de senha, ainda não usados pelo app.
 - Login com Google e Apple: o fluxo depende do back-end. Os botões existem nas telas, sem ação.
 
+Proposto, sem rota no back-end:
+
+- Narrativa do onboarding (`/v1/profile/story`): contrato e chave de ativação no [ADR 0011](0011-narrativa-do-onboarding.md).
+
 ## Consequências
 
 - Sem back-end, os formulários de entrar e criar conta validam os campos e depois mostram erro de conexão.

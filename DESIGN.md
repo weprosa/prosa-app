@@ -16,6 +16,7 @@ Use sempre o papel (`colors.primary`), nunca o hex.
 | ------------------- | --------- | ------------------------------------------------- |
 | `background`        | `#FFFFFF` | Fundo de toda tela e dos campos                   |
 | `backgroundPressed` | `#F5F5F5` | Botão secundário e ícone pressionados             |
+| `surface`           | `#F4F1EC` | Fundo suave de avisos e do controle segmentado    |
 | `text`              | `#1A1A1A` | Títulos, rótulos, texto digitado                  |
 | `textSecondary`     | `#5C5C5C` | Texto de apoio                                    |
 | `textPlaceholder`   | `#737373` | Placeholder (4.7:1; não clarear)                  |
@@ -32,6 +33,8 @@ Use sempre o papel (`colors.primary`), nunca o hex.
 
 **Uma ação coral por tela.** O botão principal é o único bloco coral. O resto das ações é secundário ou link.
 
+`surface` é um branco quente da paleta (`sand100`). Texto `textSecondary` sobre esse fundo mantém contraste de aproximadamente 6:1, acima do mínimo de 4.5:1.
+
 ## Typography
 
 Playfair Display (serifada) e Inter (sem serifa), carregadas em `src/app/_layout.tsx`. Cada peso é um arquivo: escolha a variante, nunca `fontWeight` ou `fontStyle`.
@@ -42,14 +45,18 @@ Playfair Display (serifada) e Inter (sem serifa), carregadas em `src/app/_layout
 | `displayItalic`   | Playfair Italic   | 44 / 52         | Trecho de ênfase dentro do `display` |
 | `title`           | Playfair Regular  | 34 / 42         | Título de tela                       |
 | `wordmark`        | Playfair SemiBold | 30 / 36         | A marca "Prosa"                      |
+| `heading`         | Playfair Regular  | 22 / 30         | Título de capítulo em listas         |
 | `body`            | Inter Regular     | 17 / 26         | Texto corrido e texto de campo       |
 | `bodySmall`       | Inter Regular     | 15 / 22         | Apoio, erro, rodapé                  |
 | `label`           | Inter SemiBold    | 15 / 20         | Rótulo de campo                      |
+| `eyebrow`         | Inter SemiBold    | 13 / 18         | Nome do capítulo acima da pergunta   |
 | `link`            | Inter SemiBold    | 15 / 22         | Link em linha                        |
 | `button`          | Inter Bold        | 17 / 22         | Botão principal                      |
 | `buttonSecondary` | Inter SemiBold    | 16 / 22         | Botão secundário                     |
 
 **Serifa é voz, não interface.** Playfair só em título e marca. Nada que se toca ou se preenche usa serifa.
+
+`eyebrow` usa letras maiúsculas (`textTransform: 'uppercase'`), espaçamento entre letras de 1.2 e cor `link` ao apresentar o nome do capítulo acima da pergunta.
 
 A escala de fonte do sistema é respeitada até 1.4x (`MAX_FONT_SCALE`). Componentes usam altura mínima, não fixa, para crescer junto.
 
@@ -58,6 +65,7 @@ A escala de fonte do sistema é respeitada até 1.4x (`MAX_FONT_SCALE`). Compone
 - Espaçamento em múltiplos de 4: `xxs` 4, `xs` 8, `sm` 12, `md` 16, `lg` 24, `xl` 32, `xxl` 48.
 - Margem lateral de tela: 28 (`spacing.screen`), aplicada por `Screen`.
 - Conteúdo com largura máxima de 480, centralizado em telas largas.
+- Campo de várias linhas: altura mínima de 160 (`sizes.textArea`); pode crescer com o conteúdo ou ocupar a altura livre com `fill`.
 - Itens de um mesmo grupo ficam a 8–16; grupos diferentes, a 24–32.
 - Uma coluna. A ação principal fica onde o polegar alcança; o link de alternância ("Já tem conta?") fica no pé.
 
@@ -130,6 +138,38 @@ Barra segmentada de fluxos em etapas (onboarding). Segmentos feitos em `primary`
 Aviso passageiro no topo (`showToast({ tone, title, message })`, 4 s, toque fecha). `success` ou `error` (erro que não é de campo). `<ToastHost />` fica na raiz.
 
 TextField aceita `icon` (Ionicons) decorativo à esquerda. Com `secureTextEntry`, mostra sozinho o botão de olho para mostrar/ocultar a senha.
+
+### TextArea
+
+Campo de texto com várias linhas, alinhado ao topo. Props: `accessibilityLabel` obrigatório, `label`, `hint`, `error`, `fill`, `ref` (mesmo `TextFieldRef`) e props de TextInput, exceto `style`, `placeholderTextColor` e `multiline`.
+
+- Rótulo visível opcional em `label`: o título da tela pode cumprir esse papel, mas o campo sempre precisa de `accessibilityLabel`.
+- Mesmo contorno e fonte do TextField, cantos `radii.field`, margem interna `spacing.md` e altura mínima `sizes.textArea` (160).
+- Foco usa `borderFocused`; erro usa contorno `danger` e substitui o `hint` por mensagem `bodySmall` em `danger`. O apoio usa `bodySmall` em `textSecondary`.
+- `fill` aplica `flex: 1` ao contêiner e ao campo para ocupar a altura livre. `ref` permite chamar `.focus()`; seleção e cursor usam `primary`, com escala de fonte até `MAX_FONT_SCALE`.
+
+### SegmentedControl
+
+Escolha única em abas de mesma largura. Props: `options` (lista de `SegmentedOption<T>` com `value`, `label` e `icon` opcional), `value`, `onChange` e `accessibilityLabel` obrigatório.
+
+- Trilho em pílula com fundo `surface` e margem interna `spacing.xxs`.
+- Cada aba tem altura mínima `sizes.touchTarget` (48), texto `label` e ícone Ionicons opcional de 18 em `text`, separado por `spacing.xs`.
+- Selecionada: fundo `background`, contorno de 1px em `border`, texto `text`. As demais ficam transparentes, com texto `textSecondary`. Sem sombra.
+- Leitor de tela recebe o grupo como `tablist`, cada opção como `tab` e o estado `selected`.
+
+### Notice
+
+Aviso de apoio junto ao conteúdo. Props: `message` e `icon` (Ionicons) opcional.
+
+Fundo `surface`, cantos `radii.field`, margem interna `spacing.md`. Ícone decorativo de 18 em `text`, separado por `spacing.sm` do texto `bodySmall` em `textSecondary`. O texto ocupa o espaço restante e quebra linha.
+
+### TextButton
+
+Botão de texto sem sublinhado. Props: `label`, `tone` e props de Pressable, exceto `children` e `style`.
+
+- `default`: texto `label` em `text`.
+- `muted`: texto `bodySmall` em `textSecondary`, para ações discretas.
+- Conteúdo centralizado, altura mínima `sizes.touchTarget` (48), margem interna horizontal e `hitSlop` de `spacing.xs`. Ao pressionar, opacidade de 0.6. Leitor de tela recebe o papel `button`.
 
 ## Do's and Don'ts
 

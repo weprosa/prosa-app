@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { ChipGroup, SelectField, spacing, TextField, type ChipOption } from '@/design-system';
 
 import { OnboardingStep } from './components/onboarding-step';
-import { stepPosition } from './steps';
+import { stepPosition, STORY_HREF } from './steps';
 
 const GENDERS = [
   { value: 'man', label: 'Homem' },
@@ -51,10 +51,13 @@ export function ProfileStepScreen() {
     if (Object.keys(next).length > 0) return;
 
     // TODO: o back-end ainda não tem rota de perfil (docs/adr/0008). Enviar os dados
-    // quando existir; por enquanto segue para a próxima etapa, se ela já existir.
+    // quando existir; por enquanto segue para a próxima etapa.
     const { next: nextStep } = stepPosition('profile');
     if (nextStep?.href) {
       router.push(nextStep.href);
+    } else {
+      // Temporário até as etapas 2 e 3 existirem.
+      router.push(STORY_HREF);
     }
   };
 

@@ -12,6 +12,7 @@ const palette = {
   ink200: '#D6D6D6',
   ink100: '#E6E6E6',
   ink50: '#F5F5F5',
+  sand100: '#F4F1EC',
   coral500: '#D64A4E',
   coral600: '#C2363C',
   red700: '#B3261E',
@@ -23,6 +24,8 @@ const palette = {
 export const colors = {
   background: palette.white,
   backgroundPressed: palette.ink50,
+  /** Fundo suave de avisos e controles segmentados. */
+  surface: palette.sand100,
 
   text: palette.ink900,
   textSecondary: palette.ink600,

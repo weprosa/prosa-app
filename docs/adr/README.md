@@ -13,6 +13,7 @@ Cada arquivo registra uma decisão: o contexto, o que foi decidido e o que isso 
 | [0007](0007-performance.md)                | Regras de performance                         | Aceito   |
 | [0008](0008-integracao-com-o-back-end.md)  | Integração com o back-end Laravel             | Proposto |
 | [0009](0009-idioma.md)                     | Código em inglês, interface em português      | Aceito   |
+| [0011](0011-narrativa-do-onboarding.md)    | Narrativa do onboarding                       | Proposto |
 
 ## Como criar um ADR
 

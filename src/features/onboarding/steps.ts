@@ -1,5 +1,7 @@
 import type { Href } from 'expo-router';
 
+export const STORY_HREF = '/onboarding/story' as const satisfies Href;
+
 /**
  * Ordem do onboarding. A barra de progresso e o "1 de 3" saem daqui: para incluir
  * uma etapa, crie a rota e acrescente-a nesta lista.

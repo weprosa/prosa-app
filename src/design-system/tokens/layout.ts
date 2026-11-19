@@ -22,6 +22,8 @@ export const sizes = {
   button: 56,
   /** Altura mínima de campos de texto. */
   field: 52,
+  /** Altura mínima de campos de texto com várias linhas. */
+  textArea: 160,
   /** Alvo de toque mínimo (HIG 44pt / Material 48dp). */
   touchTarget: 48,
   /** Largura máxima do conteúdo em telas largas (tablets, preview web). */
