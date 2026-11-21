@@ -1,16 +1,31 @@
+import { useMutation } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Divider, spacing } from '@/design-system';
+import { Button, Divider, showToast, spacing } from '@/design-system';
+
+import { authErrorMessage, signInWithGoogle } from '../auth-service';
 
 export function SocialSignIn() {
-  // TODO: ligar ao login social quando o back-end definir o fluxo OAuth (docs/adr/0008).
-  const signInWithGoogle = () => {};
+  const mutation = useMutation({
+    mutationFn: signInWithGoogle,
+    onSuccess: (user) => {
+      if (user) router.replace('/onboarding/profile');
+    },
+    onError: (error) => showToast({ tone: 'error', title: authErrorMessage(error) }),
+  });
+
   const signInWithApple = () => {};
 
   return (
     <View style={styles.container}>
       <Divider label="ou" />
-      <Button variant="secondary" label="Continuar com Google" onPress={signInWithGoogle} />
+      <Button
+        variant="secondary"
+        label="Continuar com Google"
+        loading={mutation.isPending}
+        onPress={() => mutation.mutate()}
+      />
       <Button variant="secondary" label="Continuar com Apple" onPress={signInWithApple} />
     </View>
   );

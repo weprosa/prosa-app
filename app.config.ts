@@ -37,7 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.ACCESS_BACKGROUND_LOCATION',
       'android.permission.RECORD_AUDIO',
     ],
-    // package: definir quando a organização/conta Google Play existir.
+    package: 'com.weprosa.app',
   },
   web: {
     // Web existe só como preview de desenvolvimento; não é plataforma de entrega.
@@ -46,6 +46,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-secure-store',
+    // iOS ainda não tem client ID; o plugin exige o esquema de URL desse client.
+    // No Android, o módulo nativo é incluído por autolinking, sem depender do plugin.
+    ...(process.env.GOOGLE_IOS_URL_SCHEME
+      ? ([
+          [
+            '@react-native-google-signin/google-signin',
+            { iosUrlScheme: process.env.GOOGLE_IOS_URL_SCHEME },
+          ],
+        ] satisfies NonNullable<ExpoConfig['plugins']>)
+      : []),
     [
       'expo-splash-screen',
       {
