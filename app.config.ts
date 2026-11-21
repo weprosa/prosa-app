@@ -6,6 +6,9 @@ const PERMISSIONS = {
   location: 'O Prosa usa sua localização para encontrar pessoas compatíveis perto de você.',
   camera: 'O Prosa usa a câmera para você tirar fotos do seu perfil e enviar nas conversas.',
   photos: 'O Prosa acessa suas fotos para você escolher imagens do perfil e enviar nas conversas.',
+  microphone: 'O Prosa usa o microfone para transformar sua resposta falada em texto.',
+  speechRecognition:
+    'O Prosa usa o reconhecimento de fala do aparelho para escrever sua resposta enquanto você fala.',
 } as const;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
@@ -32,11 +35,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
-    // Localização em segundo plano e gravação de áudio ficam fora do MVP.
-    blockedPermissions: [
-      'android.permission.ACCESS_BACKGROUND_LOCATION',
-      'android.permission.RECORD_AUDIO',
-    ],
+    // Localização em segundo plano segue bloqueada; microfone é usado no ditado (ADR 0012).
+    blockedPermissions: ['android.permission.ACCESS_BACKGROUND_LOCATION'],
     package: 'com.weprosa.app',
   },
   web: {
@@ -79,7 +79,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         cameraPermission: PERMISSIONS.camera,
         photosPermission: PERMISSIONS.photos,
-        microphonePermission: false,
+        microphonePermission: PERMISSIONS.microphone,
+      },
+    ],
+    [
+      'expo-speech-recognition',
+      {
+        microphonePermission: PERMISSIONS.microphone,
+        speechRecognitionPermission: PERMISSIONS.speechRecognition,
+        androidSpeechServicePackages: [
+          'com.google.android.googlequicksearchbox',
+          'com.google.android.as',
+          'com.google.android.tts',
+        ],
       },
     ],
   ],

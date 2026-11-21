@@ -66,6 +66,7 @@ A escala de fonte do sistema é respeitada até 1.4x (`MAX_FONT_SCALE`). Compone
 - Margem lateral de tela: 28 (`spacing.screen`), aplicada por `Screen`.
 - Conteúdo com largura máxima de 480, centralizado em telas largas.
 - Campo de várias linhas: altura mínima de 160 (`sizes.textArea`); pode crescer com o conteúdo ou ocupar a altura livre com `fill`.
+- Ditado: botão de 72 (`sizes.dictationButton`), ícone de 28 (`sizes.dictationIcon`), halo de 80 (`sizes.dictationHalo`) e área reservada de 112 (`sizes.dictationControl`) para acomodar sua expansão sem deslocar o conteúdo.
 - Itens de um mesmo grupo ficam a 8–16; grupos diferentes, a 24–32.
 - Uma coluna. A ação principal fica onde o polegar alcança; o link de alternância ("Já tem conta?") fica no pé.
 
@@ -100,6 +101,16 @@ Moldura de toda tela: fundo, safe area, margem lateral, largura máxima. `scroll
 - Estados: pressionado (tom mais escuro / cinza claro), `disabled` (opacidade 45%), `loading` (indicador no lugar do texto, bloqueia toque).
 
 `IconButton`: ícone (Ionicons) em área de toque de 48. `accessibilityLabel` obrigatório.
+
+### DictationButton
+
+Controle circular de ditado, independente da gravação. Props: `listening`, `busy` (opcional), `level` (`SharedValue<number>` entre 0 e 1 do Reanimated), `onPress`, `disabled` (opcional), `accessibilityLabel` obrigatório e `accessibilityHint` opcional.
+
+- Fundo `primary`, ícone Ionicons em `textOnPrimary`: `mic` em repouso e `stop` durante a escuta. O círculo usa `sizes.dictationButton` (72), o ícone `sizes.dictationIcon` (28) e cantos `radii.pill`.
+- Halo decorativo em `primary`, com diâmetro `sizes.dictationHalo` (80), dentro da área `sizes.dictationControl` (112). Durante a escuta, opacidade de 18% e escala de 1 a 1.35 conforme `level`, suavizada em 100 ms na thread de UI. Entrada e saída por opacidade em 150 ms; anima apenas `transform` e `opacity`.
+- Pressionado: fundo `primaryPressed` e escala de 0.96. Com redução de movimento, o halo fica estático e o botão não muda de escala; o fundo ainda responde ao toque.
+- `busy`: indicador de atividade em `textOnPrimary`, bloqueando toques enquanto prepara ou finaliza o ditado. `disabled`: opacidade de 45% e toques bloqueados.
+- Papel acessível `button`, estados `busy` e `disabled`; halo e ícone são decorativos. A tela fornece o rótulo de começar/parar e o texto de status, com região acessível de atualização educada.
 
 ### Inputs / Fields
 

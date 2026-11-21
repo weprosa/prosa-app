@@ -15,6 +15,7 @@ Cada arquivo registra uma decisão: o contexto, o que foi decidido e o que isso 
 | [0009](0009-idioma.md)                     | Código em inglês, interface em português      | Aceito   |
 | [0010](0010-login-com-google.md)           | Login com Google                              | Aceito   |
 | [0011](0011-narrativa-do-onboarding.md)    | Narrativa do onboarding                       | Proposto |
+| [0012](0012-ditado-por-voz.md)             | Ditado por voz na narrativa                   | Aceito   |
 
 ## Como criar um ADR
 

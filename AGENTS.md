@@ -15,7 +15,7 @@ Leia antes de mudar qualquer coisa:
 3. **Foto só depois do match.** Nenhuma tela mostra foto de outra pessoa antes de o back-end confirmar o match. É a regra central do produto.
 4. **UI só com o design system.** Em `src/app` e `src/features`, texto, botão, campo e cor vêm de `@/design-system`. Sem hex, sem tamanho de fonte e sem número de espaçamento solto em tela. Faltou um componente ou token? Crie no design system e documente em `DESIGN.md`. O ESLint barra parte disso.
 5. **Sem dependência nova sem motivo.** Prefira módulos Expo. Biblioteca de UI, de estilo, de estado global ou de formulário exige ADR.
-6. **Permissões:** só localização em uso e câmera/fotos, pedidas no momento do uso, via `src/lib/permissions.ts`. Localização em segundo plano, microfone, contatos e rastreamento (ATT) estão fora do MVP ([ADR 0006](docs/adr/0006-permissoes.md)).
+6. **Permissões:** só localização em uso, câmera/fotos e microfone para ditado por voz ([ADR 0012](docs/adr/0012-ditado-por-voz.md)), pedidas no momento do uso, via `src/lib/permissions.ts`. Localização em segundo plano, contatos e rastreamento (ATT) estão fora do MVP ([ADR 0006](docs/adr/0006-permissoes.md)).
 7. **Sem commit, push ou PR sem pedido explícito.** A organização no GitHub ainda não existe.
 8. **Nunca edite `ios/` e `android/`.** São gerados (CNG). Configuração nativa vai em `app.config.ts`.
 

@@ -1,5 +1,6 @@
 export { Button, type ButtonProps } from './components/button';
 export { ChipGroup, type ChipGroupProps, type ChipOption } from './components/chip';
+export { DictationButton, type DictationButtonProps } from './components/dictation-button';
 export { Divider } from './components/divider';
 export { IconButton, type IconButtonProps } from './components/icon-button';
 export { Notice, type NoticeProps } from './components/notice';
