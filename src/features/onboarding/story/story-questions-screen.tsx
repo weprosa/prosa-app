@@ -1,10 +1,11 @@
 import { router, useIsFocused } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { BackHandler, StyleSheet, View } from 'react-native';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { BackHandler, Keyboard, Linking, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import {
   Button,
+  DictationButton,
   IconButton,
   Notice,
   ProgressSteps,
@@ -32,9 +33,11 @@ import {
   useStory,
 } from '@/features/onboarding/story/use-story';
 import { STORY_HREF } from '@/features/onboarding/steps';
+import { useVoiceDictation } from '@/lib/voice-dictation';
 
 type AnswerMode = 'write' | 'speak';
 type Position = { chapterIndex: number; questionIndex: number };
+type StoryDrafts = Partial<Record<StoryQuestionId, string>>;
 
 const ANSWER_MODES = [
   { value: 'write', label: 'Escrever', icon: 'create-outline' },
@@ -56,8 +59,20 @@ function goBack(position: Position, setPosition: (position: Position) => void) {
 
 export function StoryQuestionsScreen() {
   const [position, setPosition] = useState<Position>({ chapterIndex: 0, questionIndex: 0 });
-  const [drafts, setDrafts] = useState<Partial<Record<StoryQuestionId, string>>>({});
+  const [drafts, setDraftState] = useState<StoryDrafts>({});
+  const draftsRef = useRef<StoryDrafts>({});
   const [mode, setMode] = useState<AnswerMode>('write');
+  const [transitioning, setTransitioning] = useState(false);
+  const [now, setNow] = useState(Date.now);
+  // Leitura síncrona após stop(): o resultado final pode preceder o próximo render.
+  function setDrafts(update: (previous: StoryDrafts) => StoryDrafts) {
+    const next = update(draftsRef.current);
+    draftsRef.current = next;
+    setDraftState(next);
+  }
+  const dictation = useVoiceDictation((key, text) =>
+    setDrafts((previous) => ({ ...previous, [key as StoryQuestionId]: text })),
+  );
   const story = useStory();
   const saveStoryAnswers = useSaveStoryAnswers();
   const completeStory = useCompleteStory();
@@ -67,27 +82,64 @@ export function StoryQuestionsScreen() {
   const question = chapter.questions[position.questionIndex];
   const isLastChapter = position.chapterIndex === STORY_CHAPTERS.length - 1;
   const isLastQuestion = position.questionIndex === chapter.questions.length - 1;
-  const isPending = saveStoryAnswers.isPending || completeStory.isPending;
+  const isPending = transitioning || saveStoryAnswers.isPending || completeStory.isPending;
+  const listening = dictation.status === 'listening';
+  const dictationBusy = dictation.status === 'requesting' || dictation.status === 'stopping';
+  const currentText = drafts[question.id] ?? serverAnswers[question.id] ?? '';
+  const elapsedSeconds =
+    listening && dictation.startedAt !== null
+      ? Math.max(0, Math.floor((now - dictation.startedAt) / 1000))
+      : 0;
+  const elapsed = `${Math.floor(elapsedSeconds / 60)}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
+  const dictationStatus =
+    dictation.status === 'requesting'
+      ? 'Preparando o microfone…'
+      : listening
+        ? `Ouvindo… toque para parar · ${elapsed}`
+        : dictation.status === 'stopping'
+          ? 'Finalizando seu texto…'
+          : currentText.trim()
+            ? 'Toque no microfone para continuar falando.'
+            : 'Toque no microfone e fale. Sua resposta aparece aqui e você pode editar depois.';
   // Trava síncrona: dois toques antes do próximo render ainda veem `isPending` falso.
   const saving = useRef(false);
 
   useEffect(() => {
+    if (!listening || dictation.startedAt === null) return;
+
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [listening, dictation.startedAt]);
+
+  async function transition(action: () => void | Promise<void>) {
+    if (isPending || saving.current) return;
+    saving.current = true;
+    setTransitioning(true);
+    try {
+      await dictation.stop();
+      await action();
+    } finally {
+      saving.current = false;
+      setTransitioning(false);
+    }
+  }
+
+  const onHardwareBack = useEffectEvent(() => {
+    void transition(() => goBack(position, setPosition));
+    return true;
+  });
+
+  useEffect(() => {
     if (!isFocused) return;
 
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (!isPending) goBack(position, setPosition);
-      return true;
-    });
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
     return () => subscription.remove();
-  }, [isFocused, isPending, position]);
+  }, [isFocused]);
 
   const finishChapter = async () => {
-    if (saving.current) return;
-    saving.current = true;
-
     const answers: StoryAnswer[] = [];
     for (const { id } of chapter.questions) {
-      const text = (drafts[id] ?? serverAnswers[id] ?? '').trim();
+      const text = (draftsRef.current[id] ?? serverAnswers[id] ?? '').trim();
       if (text !== (serverAnswers[id] ?? '')) answers.push({ question_id: id, text });
     }
 
@@ -106,17 +158,39 @@ export function StoryQuestionsScreen() {
         title: 'Não deu para salvar',
         message: 'Confira sua conexão e tente de novo.',
       });
-    } finally {
-      saving.current = false;
     }
   };
 
   const nextQuestion = () => {
-    if (isPending) return;
-    if (isLastQuestion) {
-      void finishChapter();
+    void transition(async () => {
+      if (isLastQuestion) {
+        await finishChapter();
+      } else {
+        setPosition({ ...position, questionIndex: position.questionIndex + 1 });
+      }
+    });
+  };
+
+  const changeMode = (nextMode: AnswerMode) => {
+    if (nextMode === mode) return;
+    void transition(() => {
+      if (nextMode === 'write') dictation.clearError();
+      setMode(nextMode);
+    });
+  };
+
+  const toggleDictation = () => {
+    if (isPending || saving.current || dictationBusy) return;
+    if (listening) {
+      void dictation.stop();
     } else {
-      setPosition({ ...position, questionIndex: position.questionIndex + 1 });
+      Keyboard.dismiss();
+      dictation.clearError();
+      void dictation.start({
+        sessionKey: question.id,
+        initialText: draftsRef.current[question.id] ?? serverAnswers[question.id] ?? '',
+        maxLength: STORY_ANSWER_MAX_LENGTH,
+      });
     }
   };
 
@@ -127,14 +201,14 @@ export function StoryQuestionsScreen() {
           <IconButton
             icon="chevron-back"
             accessibilityLabel="Voltar"
-            onPress={() => goBack(position, setPosition)}
+            onPress={() => void transition(() => goBack(position, setPosition))}
             disabled={isPending}
           />
         </View>
         <TextButton
           label="Pular capítulo"
           tone="muted"
-          onPress={() => void finishChapter()}
+          onPress={() => void transition(finishChapter)}
           disabled={isPending}
           accessibilityState={{ disabled: isPending }}
         />
@@ -160,26 +234,80 @@ export function StoryQuestionsScreen() {
           accessibilityLabel="Como responder"
           options={ANSWER_MODES}
           value={mode}
-          onChange={setMode}
+          onChange={changeMode}
         />
-        {mode === 'write' ? (
-          <TextArea
-            fill
-            accessibilityLabel={question.prompt}
-            placeholder="Escreva com calma, do seu jeito..."
-            value={drafts[question.id] ?? serverAnswers[question.id] ?? ''}
-            onChangeText={(text) => setDrafts((previous) => ({ ...previous, [question.id]: text }))}
-            maxLength={STORY_ANSWER_MAX_LENGTH}
-            autoCapitalize="sentences"
-            hint="Sem resposta certa. Se preferir, pode seguir sem responder."
-            editable={!isPending}
-          />
-        ) : (
-          <Notice
-            icon="mic-outline"
-            message="Responder falando chega em breve. Por enquanto, escreva sua resposta."
-          />
-        )}
+        <TextArea
+          fill
+          accessibilityLabel={question.prompt}
+          placeholder={
+            mode === 'speak'
+              ? 'O que você falar aparece aqui, em texto.'
+              : 'Escreva com calma, do seu jeito...'
+          }
+          value={currentText}
+          onChangeText={(text) => setDrafts((previous) => ({ ...previous, [question.id]: text }))}
+          maxLength={STORY_ANSWER_MAX_LENGTH}
+          autoCapitalize="sentences"
+          hint="Sem resposta certa. Se preferir, pode seguir sem responder."
+          editable={!isPending && !listening && dictation.status !== 'stopping'}
+        />
+        {mode === 'speak' ? (
+          dictation.supported ? (
+            <>
+              <View style={styles.dictation}>
+                <DictationButton
+                  listening={listening}
+                  busy={dictationBusy}
+                  level={dictation.level}
+                  onPress={toggleDictation}
+                  disabled={isPending}
+                  accessibilityLabel={listening ? 'Parar de falar' : 'Começar a falar'}
+                />
+                <Text
+                  variant="bodySmall"
+                  color="textSecondary"
+                  align="center"
+                  accessibilityLiveRegion="polite"
+                >
+                  {dictationStatus}
+                </Text>
+              </View>
+              {dictation.error ? (
+                <View style={styles.dictationError}>
+                  <Notice icon="alert-circle-outline" message={dictation.error.message} />
+                  {dictation.error.code === 'blocked' ? (
+                    <TextButton
+                      label="Abrir ajustes"
+                      disabled={isPending}
+                      onPress={() =>
+                        void transition(async () => {
+                          try {
+                            await Linking.openSettings();
+                          } catch {
+                            showToast({
+                              tone: 'error',
+                              title: 'Não deu para abrir os ajustes',
+                              message: 'Abra os ajustes do aparelho e procure o Prosa.',
+                            });
+                          }
+                        })
+                      }
+                    />
+                  ) : null}
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <View style={styles.dictationError}>
+              <Notice message="Responder falando não está disponível neste aparelho. Você pode escrever sua resposta." />
+              <TextButton
+                label="Escrever resposta"
+                disabled={isPending}
+                onPress={() => changeMode('write')}
+              />
+            </View>
+          )
+        ) : null}
       </View>
 
       <View style={styles.footer}>
@@ -204,5 +332,7 @@ const styles = StyleSheet.create({
   caption: { marginBottom: spacing.sm },
   body: { flex: 1, gap: spacing.md, marginTop: spacing.lg },
   header: { gap: spacing.xxs },
+  dictation: { alignItems: 'center', gap: spacing.xxs },
+  dictationError: { gap: spacing.xxs },
   footer: { paddingTop: spacing.xl },
 });

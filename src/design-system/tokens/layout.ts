@@ -24,6 +24,14 @@ export const sizes = {
   field: 52,
   /** Altura mínima de campos de texto com várias linhas. */
   textArea: 160,
+  /** Diâmetro do botão de ditado por voz. */
+  dictationButton: 72,
+  /** Diâmetro do halo em repouso, antes da escala do nível de áudio. */
+  dictationHalo: 80,
+  /** Área reservada para o halo expandido, sem deslocar o conteúdo. */
+  dictationControl: 112,
+  /** Ícones de microfone e parada do botão de ditado. */
+  dictationIcon: 28,
   /** Alvo de toque mínimo (HIG 44pt / Material 48dp). */
   touchTarget: 48,
   /** Largura máxima do conteúdo em telas largas (tablets, preview web). */

@@ -1,7 +1,9 @@
 # 0006. Permissões: localização em uso e câmera
 
-- Status: Aceito
+- Status: Aceito, microfone revisto pelo ADR 0012
 - Data: 2026-11-09
+
+O [ADR 0012](0012-ditado-por-voz.md) permite microfone e reconhecimento de fala apenas para ditado na narrativa, revendo os trechos abaixo sobre microfone.
 
 ## Contexto
 

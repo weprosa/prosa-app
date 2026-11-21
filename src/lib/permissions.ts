@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 
 /**
  * `blocked`: a pessoa negou e o sistema não mostra mais o diálogo. A tela deve
@@ -36,4 +37,11 @@ export const ensurePhotoLibraryPermission = () =>
   ensure(
     () => ImagePicker.getMediaLibraryPermissionsAsync(),
     () => ImagePicker.requestMediaLibraryPermissionsAsync(),
+  );
+
+/** iOS pede microfone e reconhecimento de fala; Android pede só microfone (ADR 0012). */
+export const ensureSpeechPermission = () =>
+  ensure(
+    ExpoSpeechRecognitionModule.getPermissionsAsync,
+    ExpoSpeechRecognitionModule.requestPermissionsAsync,
   );
