@@ -5,7 +5,8 @@ import { Text } from './text';
 
 /** Linha separadora, com rótulo opcional no meio ("ou"). */
 export function Divider({ label }: { label?: string }) {
-  if (!label) return <View style={styles.line} />;
+  // Sem rótulo, a linha estica na largura do pai (em coluna, `flex: 1` a zeraria).
+  if (!label) return <View style={styles.rule} />;
 
   return (
     <View style={styles.row}>
@@ -21,4 +22,5 @@ export function Divider({ label }: { label?: string }) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   line: { flex: 1, height: 1, backgroundColor: colors.divider },
+  rule: { alignSelf: 'stretch', height: 1, backgroundColor: colors.divider },
 });

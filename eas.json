@@ -7,13 +7,15 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://prosa-api-production-xrtdnk.laravel.cloud/api"
+        "EXPO_PUBLIC_API_URL": "https://prosa-api-production-xrtdnk.laravel.cloud/api",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "28754462531-ubs6tlvobh405f3fte3ge0kajlbfobuc.apps.googleusercontent.com"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://prosa-api-production-xrtdnk.laravel.cloud/api"
+        "EXPO_PUBLIC_API_URL": "https://prosa-api-production-xrtdnk.laravel.cloud/api",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "28754462531-ubs6tlvobh405f3fte3ge0kajlbfobuc.apps.googleusercontent.com"
       },
       "android": {
         "buildType": "apk"
@@ -22,7 +24,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://prosa-api-production-xrtdnk.laravel.cloud/api"
+        "EXPO_PUBLIC_API_URL": "https://prosa-api-production-xrtdnk.laravel.cloud/api",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "28754462531-ubs6tlvobh405f3fte3ge0kajlbfobuc.apps.googleusercontent.com"
       }
     }
   }
