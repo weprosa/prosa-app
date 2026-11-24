@@ -1,5 +1,6 @@
 export { Button, type ButtonProps } from './components/button';
 export { ChipGroup, type ChipGroupProps, type ChipOption } from './components/chip';
+export { DateField, type DateFieldProps } from './components/date-field';
 export { DictationButton, type DictationButtonProps } from './components/dictation-button';
 export { Divider } from './components/divider';
 export { IconButton, type IconButtonProps } from './components/icon-button';
@@ -7,6 +8,7 @@ export { Notice, type NoticeProps } from './components/notice';
 export { ProgressSteps, type ProgressStepsProps } from './components/progress-steps';
 export { Screen, type ScreenProps } from './components/screen';
 export { SelectField, type SelectFieldProps, type SelectOption } from './components/select-field';
+export { Slider, RangeSlider, type SliderProps, type RangeSliderProps } from './components/slider';
 export {
   SegmentedControl,
   type SegmentedControlProps,

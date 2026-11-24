@@ -10,7 +10,7 @@ export function SocialSignIn() {
   const mutation = useMutation({
     mutationFn: signInWithGoogle,
     onSuccess: (user) => {
-      if (user) router.replace('/onboarding/profile');
+      if (user) router.replace('/onboarding');
     },
     onError: (error) => showToast({ tone: 'error', title: authErrorMessage(error) }),
   });

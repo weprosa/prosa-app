@@ -17,11 +17,18 @@ export const radii = {
   sheet: 24,
 } as const;
 
+export const borderWidths = {
+  default: 1,
+  emphasis: 2,
+} as const;
+
 export const sizes = {
   /** Altura mínima de botões. */
   button: 56,
   /** Altura mínima de campos de texto. */
   field: 52,
+  /** Base a 1x para dois campos no celular; escale com a fonte para preservar a quebra. */
+  fieldMinWidth: 140,
   /** Altura mínima de campos de texto com várias linhas. */
   textArea: 160,
   /** Diâmetro do botão de ditado por voz. */
@@ -34,6 +41,11 @@ export const sizes = {
   dictationIcon: 28,
   /** Alvo de toque mínimo (HIG 44pt / Material 48dp). */
   touchTarget: 48,
+  /** Trilho e polegar dos sliders; o alvo de toque continua com 48pt. */
+  sliderTrack: 4,
+  sliderThumb: 24,
+  /** Ícone de calendário do campo de data. */
+  fieldIcon: 20,
   /** Largura máxima do conteúdo em telas largas (tablets, preview web). */
   contentMaxWidth: 480,
 } as const;

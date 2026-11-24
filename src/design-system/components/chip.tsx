@@ -9,9 +9,11 @@ export type ChipGroupProps<T extends string> = {
   label: string;
   options: readonly ChipOption<T>[];
   value: T | null;
-  onChange: (value: T) => void;
   error?: string;
-};
+} & (
+  | { allowDeselect?: false; onChange: (value: T) => void }
+  | { allowDeselect: true; onChange: (value: T | null) => void }
+);
 
 /** Escolha única entre poucas opções, em pílulas que quebram linha. */
 export function ChipGroup<T extends string>({
@@ -19,6 +21,7 @@ export function ChipGroup<T extends string>({
   options,
   value,
   onChange,
+  allowDeselect,
   error,
 }: ChipGroupProps<T>) {
   return (
@@ -33,7 +36,10 @@ export function ChipGroup<T extends string>({
               accessibilityRole="radio"
               accessibilityState={{ selected, checked: selected }}
               accessibilityLabel={option.label}
-              onPress={() => onChange(option.value)}
+              onPress={() => {
+                if (allowDeselect && selected) onChange(null);
+                else onChange(option.value);
+              }}
               style={({ pressed }) => [
                 styles.chip,
                 selected && styles.selected,

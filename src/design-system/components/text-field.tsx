@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState, type ComponentProps, type Ref } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   TextInput,
@@ -19,6 +20,13 @@ export type TextFieldProps = Omit<TextInputProps, 'style' | 'placeholderTextColo
   ref?: Ref<TextFieldRef>;
   /** Ícone decorativo à esquerda do texto. */
   icon?: ComponentProps<typeof Ionicons>['name'];
+  /** Torna o ícone um botão; sem esta prop, ele continua decorativo. */
+  iconAction?: {
+    onPress: () => void;
+    accessibilityLabel: string;
+    disabled?: boolean;
+    busy?: boolean;
+  };
 };
 
 /** Tipo do `ref` de um TextField (para `.focus()` no campo seguinte). */
@@ -28,6 +36,7 @@ export function TextField({
   label,
   error,
   icon,
+  iconAction,
   secureTextEntry,
   onFocus,
   onBlur,
@@ -43,7 +52,16 @@ export function TextField({
     <View style={styles.container}>
       <Text variant="label">{label}</Text>
       <View style={styles.inputWrap}>
-        {icon ? <Ionicons name={icon} size={20} color={colors.text} style={styles.icon} /> : null}
+        {icon && !iconAction ? (
+          <Ionicons
+            name={icon}
+            size={sizes.fieldIcon}
+            color={colors.text}
+            style={styles.icon}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+        ) : null}
         <TextInput
           ref={ref}
           accessibilityLabel={label}
@@ -65,11 +83,37 @@ export function TextField({
           style={[
             styles.input,
             !!icon && styles.inputWithIcon,
+            !!icon && !!iconAction && styles.inputWithIconAction,
             isPassword && styles.inputWithToggle,
             focused && styles.inputFocused,
             !!error && styles.inputError,
           ]}
         />
+        {icon && iconAction ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={iconAction.accessibilityLabel}
+            accessibilityState={{
+              disabled: !!iconAction.disabled || !!iconAction.busy,
+              busy: !!iconAction.busy,
+            }}
+            disabled={iconAction.disabled || iconAction.busy}
+            onPress={iconAction.onPress}
+            style={({ pressed }) => [styles.iconAction, pressed && styles.iconActionPressed]}
+          >
+            {iconAction.busy ? (
+              <ActivityIndicator size="small" color={colors.textSecondary} />
+            ) : (
+              <Ionicons
+                name={icon}
+                size={sizes.fieldIcon}
+                color={iconAction.disabled ? colors.textSecondary : colors.text}
+                accessible={false}
+                importantForAccessibility="no"
+              />
+            )}
+          </Pressable>
+        ) : null}
         {isPassword ? (
           <Pressable
             accessibilityRole="button"
@@ -113,6 +157,17 @@ const styles = StyleSheet.create({
   icon: { position: 'absolute', left: spacing.md, zIndex: 1 },
   // Ícone (20) + respiro (8) depois da margem interna.
   inputWithIcon: { paddingLeft: spacing.md + 28 },
+  inputWithIconAction: { paddingLeft: sizes.touchTarget },
+  iconAction: {
+    position: 'absolute',
+    left: 0,
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: radii.field,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconActionPressed: { backgroundColor: colors.backgroundPressed },
   // Botão com alvo de toque de 48, encostado na borda direita do campo.
   toggle: {
     position: 'absolute',

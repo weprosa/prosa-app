@@ -47,7 +47,7 @@ export const colors = {
   // 6.4:1 sobre green50.
   success: palette.green700,
   successBackground: palette.green50,
-  /** Trilho de barras de progresso. */
+  /** Trilho de barras de progresso e sliders. */
   track: palette.ink100,
   /** Fundo atrás de folhas e modais. */
   overlay: 'rgba(26, 26, 26, 0.4)',
