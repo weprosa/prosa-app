@@ -13,9 +13,11 @@ export type SelectFieldProps<T extends string | number> = {
   placeholder: string;
   options: readonly SelectOption<T>[];
   value: T | null;
-  onChange: (value: T) => void;
   error?: string;
-};
+} & (
+  | { clearLabel?: undefined; onChange: (value: T) => void }
+  | { clearLabel: string; onChange: (value: T | null) => void }
+);
 
 /** Campo com aparência de TextField que abre uma lista de opções numa folha inferior. */
 export function SelectField<T extends string | number>({
@@ -24,6 +26,7 @@ export function SelectField<T extends string | number>({
   options,
   value,
   onChange,
+  clearLabel,
   error,
 }: SelectFieldProps<T>) {
   const [open, setOpen] = useState(false);
@@ -69,6 +72,25 @@ export function SelectField<T extends string | number>({
             data={options}
             keyExtractor={(option) => String(option.value)}
             initialNumToRender={20}
+            ListHeaderComponent={
+              clearLabel !== undefined ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={clearLabel}
+                  accessibilityState={{ selected: value === null }}
+                  onPress={() => {
+                    onChange(null);
+                    setOpen(false);
+                  }}
+                  style={({ pressed }) => [styles.option, pressed && styles.pressed]}
+                >
+                  <Text variant={value === null ? 'label' : 'body'}>{clearLabel}</Text>
+                  {value === null ? (
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
+                  ) : null}
+                </Pressable>
+              ) : undefined
+            }
             renderItem={({ item }) => {
               const isSelected = item.value === value;
               return (

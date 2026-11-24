@@ -119,6 +119,7 @@ export async function api<T>(
   if (!env.apiUrl) throw new NetworkError();
 
   let session = auth ? await getSession() : null;
+  if (auth && !session) return expireSession();
   if (session) {
     if (isExpired(session)) return expireSession();
     if (session.expiresAt - Date.now() < REFRESH_WINDOW_MS) {

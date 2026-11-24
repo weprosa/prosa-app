@@ -66,7 +66,9 @@ A escala de fonte do sistema é respeitada até 1.4x (`MAX_FONT_SCALE`). Compone
 - Margem lateral de tela: 28 (`spacing.screen`), aplicada por `Screen`.
 - Conteúdo com largura máxima de 480, centralizado em telas largas.
 - Campo de várias linhas: altura mínima de 160 (`sizes.textArea`); pode crescer com o conteúdo ou ocupar a altura livre com `fill`.
+- Campos lado a lado: largura de referência de 140 (`sizes.fieldMinWidth`) em `flexBasis` a 1x, multiplicada pela escala de fonte até `MAX_FONT_SCALE`, com `flexGrow` para dividir o espaço e `flexWrap` na linha para empilhar quando não couberem. Nascimento e Cidade cabem juntos em 393 pt com a fonte padrão e empilham com fontes grandes.
 - Ditado: botão de 72 (`sizes.dictationButton`), ícone de 28 (`sizes.dictationIcon`), halo de 80 (`sizes.dictationHalo`) e área reservada de 112 (`sizes.dictationControl`) para acomodar sua expansão sem deslocar o conteúdo.
+- Sliders: trilho de 4 (`sizes.sliderTrack`) e polegar de 24 (`sizes.sliderThumb`) dentro de um alvo de 48 (`sizes.touchTarget`). O calendário usa ícone de 20 (`sizes.fieldIcon`).
 - Itens de um mesmo grupo ficam a 8–16; grupos diferentes, a 24–32.
 - Uma coluna. A ação principal fica onde o polegar alcança; o link de alternância ("Já tem conta?") fica no pé.
 
@@ -79,6 +81,7 @@ Não há sombra nem elevação. Separação é feita por espaço, contorno de 1p
 - Botões: pílula (`radii.pill`).
 - Campos: cantos de 14 (`radii.field`).
 - Contornos de 1px. O sublinhado de link tem 1.5px, feito com borda para ter respiro do texto.
+- Novos controles usam `borderWidths.default` (1) no campo e `borderWidths.emphasis` (2) no polegar do slider.
 
 ## Components
 
@@ -119,6 +122,7 @@ Controle circular de ditado, independente da gravação. Props: `listening`, `bu
 - Estados: padrão (contorno cinza), foco (contorno escuro), erro (contorno e mensagem em `danger` logo abaixo).
 - Mensagem de erro diz o problema e o que fazer: "Use pelo menos 8 caracteres."
 - Validação acontece ao enviar. Preencha sempre `autoComplete`, `textContentType`, `keyboardType` e `returnKeyType`, e encadeie o foco para o campo seguinte.
+- `iconAction` opcional torna o `icon` à esquerda tocável: recebe `onPress`, `accessibilityLabel` obrigatório, `disabled` e `busy`. Tem alvo de `sizes.touchTarget` (48), fundo `backgroundPressed` ao pressionar e indicador de atividade em `busy`, que também bloqueia novos toques. Sem `iconAction`, o ícone permanece decorativo e o comportamento anterior é preservado.
 
 ### TextLink
 
@@ -136,9 +140,36 @@ A marca "Prosa" em texto. Substituir por logotipo quando existir.
 
 Escolha única entre poucas opções, em pílulas que quebram linha (altura de toque 48). Selecionada: fundo `primary`, texto `textOnPrimary`.
 
+`allowDeselect` opcional permite tocar novamente na opção selecionada para limpar o valor. Com `allowDeselect: true`, `onChange` recebe `T | null`; sem essa opção, recebe apenas `T`.
+
 ### SelectField
 
 Campo com a aparência do TextField que abre uma folha inferior com a lista de opções (`FlatList`). Use para listas longas, como idade.
+
+`clearLabel` opcional acrescenta a primeira linha da lista para limpar a seleção, por exemplo, “Prefiro não informar”. Essa linha emite `null` e fecha a folha; o campo volta ao placeholder. Com `clearLabel`, `onChange` recebe `T | null`; sem a prop, recebe apenas `T` e a linha não aparece.
+
+### DateField
+
+Campo de data com a aparência do SelectField e ícone decorativo `calendar-outline`. Exporta `DateField` e `DateFieldProps`.
+
+- Props obrigatórias: `label`, `placeholder`, `value: string | null` e `onChange: (value: string | null) => void`. Opcionais: `minimumDate`, `maximumDate` e `error`. Datas e limites usam `YYYY-MM-DD`, com limites inclusivos e mínimo anterior ou igual ao máximo. A regra de maioridade pertence à tela, que fornece `maximumDate`.
+- Exibe `DD/MM/AAAA`; mantém rótulo visível, altura mínima `sizes.field`, contorno em `border` e ícone `sizes.fieldIcon`. Aberto: contorno `borderFocused`. Erro: contorno e mensagem em `danger`, com anúncio acessível.
+- Usa `DateTimePicker` de `@expo/ui/community/datetime-picker`, modo `date`, tema claro e destaque `primary`. No iOS, abre uma folha com picker de rolagem em pt-BR e ações Cancelar/Confirmar. Girar o picker altera só a seleção provisória; cancelar, tocar fora ou usar o gesto de escape descarta a alteração. A folha respeita safe area e redução de movimento.
+- No Android, monta o diálogo nativo; `onValueChange` confirma e fecha, `onDismiss` fecha sem emitir alteração. Os botões recebem os textos Confirmar/Cancelar; o idioma do calendário acompanha o sistema.
+- Na web, usa `TextField` com ícone de calendário e entrada numérica com máscara `DD/MM/AAAA`; as barras são inseridas automaticamente. Emite `onChange` em `YYYY-MM-DD` quando a data está completa, existe no calendário e respeita os limites inclusivos; nos demais casos, emite `null` para limpar qualquer valor anterior. iOS e Android continuam emitindo apenas datas válidas. Datas completas inválidas ou fora do intervalo mostram o motivo em português, com prioridade para a prop `error`. A digitação parcial ou inválida permanece visível; mudanças externas em `value` sincronizam o texto exibido. Mantém rótulo visível e dica acessível de formato ou erro.
+- Ao abrir, começa no valor atual ou, sem valor, em `maximumDate`; sem ambos, usa hoje. A seleção inicial e a confirmada respeitam os limites. Conversões usam ano/mês/dia locais, com meio-dia ao ler datas, sem converter a data local para UTC. Strings inválidas não são passadas ao picker.
+
+### Slider / RangeSlider
+
+Controles numéricos controlados, exportados com `SliderProps` e `RangeSliderProps`. O consumidor atualiza `value` em `onChange` e fornece a apresentação em `valueText` (por exemplo, “até 30 km” ou “25 – 35”).
+
+- Props comuns obrigatórias: `label`, `valueText`, `min`, `max`, `value`, `onChange`, `minLabel` e `maxLabel`. `step` é opcional e vale 1. Limites, passo e distância são inteiros; `min ≤ max`, `step > 0`. O valor recebido é ajustado à grade e aos limites, sem emitir alteração na montagem. `max` permanece selecionável mesmo quando o último intervalo é menor que `step`.
+- `Slider`: `value: number`, `onChange: (value: number) => void` e `accessibilityValueText?: string` (usa `valueText` quando omitido).
+- `RangeSlider`: `value: readonly [number, number]`, `onChange: (value: [number, number]) => void` e `minDistance?: number` (padrão 0, entre 0 e `max - min`). A distância é respeitada na grade; os polegares podem coincidir quando ela vale zero, mas nunca se cruzam.
+- Rótulo à esquerda, valor em `link` à direita (contraste para texto pequeno), legendas em `textSecondary` abaixo. Trilho `track`, trecho selecionado `primary`, polegar branco (`background`) com borda `primary`, sem sombra. O cabeçalho quebra linha quando necessário para acomodar texto ampliado.
+- A largura é medida por `onLayout`. Cada polegar ocupa `sizes.touchTarget` (48 × 48), com centros recuados em meia área de toque nas extremidades. O arraste escolhe o polegar mais próximo; se coincidirem, arrastar para a esquerda move o mínimo e para a direita move o máximo. Movimentos verticais antes da ativação cedem à rolagem da tela.
+- Gestos usam `usePanGesture`/`GestureDetector` do Gesture Handler 3; posições e trecho ativo são atualizados na thread de UI com Reanimated, animando apenas `transform`. Não há inércia nem movimento decorativo. `onChange` chega à thread JS apenas quando o passo muda, inclusive por acessibilidade; limites não geram chamadas repetidas. O estado controlado é reconciliado ao encerrar ou cancelar o arraste.
+- Cada polegar tem papel `adjustable`, rótulo próprio (mínimo/máximo na faixa), `accessibilityValue` com limites numéricos e descrição legível e ações `increment`/`decrement`. Na web, aceita foco por Tab e ajuste pelas setas. Na raiz do app, `GestureHandlerRootView` envolve os provedores e as rotas.
 
 ### ProgressSteps
 

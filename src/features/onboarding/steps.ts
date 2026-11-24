@@ -1,5 +1,10 @@
 import type { Href } from 'expo-router';
 
+import type { OnboardingUser } from '@/features/onboarding/onboarding-service';
+
+export const PROFILE_HREF = '/onboarding/profile' as const satisfies Href;
+export const PREFERENCES_HREF = '/onboarding/preferences' as const satisfies Href;
+export const LIFESTYLE_HREF = '/onboarding/lifestyle' as const satisfies Href;
 export const STORY_HREF = '/onboarding/story' as const satisfies Href;
 
 /**
@@ -7,15 +12,36 @@ export const STORY_HREF = '/onboarding/story' as const satisfies Href;
  * uma etapa, crie a rota e acrescente-a nesta lista.
  */
 export const ONBOARDING_STEPS = [
-  { id: 'profile', href: '/onboarding/profile' },
-  // TODO: etapas 2 e 3 ainda sem design.
-  { id: 'step-2', href: null },
-  { id: 'step-3', href: null },
-] as const satisfies readonly { id: string; href: Href | null }[];
+  { id: 'profile', href: PROFILE_HREF },
+  { id: 'preferences', href: PREFERENCES_HREF },
+  { id: 'lifestyle', href: LIFESTYLE_HREF },
+] as const satisfies readonly { id: string; href: Href }[];
 
 export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number]['id'];
 
 export function stepPosition(id: OnboardingStepId) {
   const index = ONBOARDING_STEPS.findIndex((step) => step.id === id);
-  return { current: index + 1, total: ONBOARDING_STEPS.length, next: ONBOARDING_STEPS[index + 1] };
+  return {
+    current: index + 1,
+    total: ONBOARDING_STEPS.length,
+    next: ONBOARDING_STEPS[index + 1],
+    previous: ONBOARDING_STEPS[index - 1],
+  };
+}
+
+export function nextOnboardingHref(user: OnboardingUser) {
+  const { preferences } = user;
+  const profileIncomplete =
+    !user.nickname?.trim() || !user.birth_date || !user.gender_identity || !user.city?.trim();
+
+  // O interesse da etapa 1 só é persistido ao salvar as preferências na etapa 2.
+  if (profileIncomplete || preferences.relationship_intention === null) return PROFILE_HREF;
+
+  const lifestyleEmpty =
+    preferences.alcohol_frequency === null &&
+    preferences.smoking_frequency === null &&
+    preferences.religion === null &&
+    preferences.religion_importance === null;
+
+  return lifestyleEmpty ? LIFESTYLE_HREF : STORY_HREF;
 }

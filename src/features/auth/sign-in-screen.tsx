@@ -48,7 +48,7 @@ export function SignInScreen() {
         showToast({ tone: 'error', title: authErrorMessage(error) });
       }
     },
-    onSuccess: () => router.replace('/onboarding/profile'),
+    onSuccess: () => router.replace('/onboarding'),
   });
 
   const submit = () => {

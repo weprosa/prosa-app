@@ -53,7 +53,7 @@ export function SessionGate() {
   useEffect(() => {
     if (status === 'welcome') void SplashScreen.hideAsync();
     // No sucesso, o layout esconde o splash quando a rota de destino montar.
-    if (status === 'authenticated') router.replace('/onboarding/profile');
+    if (status === 'authenticated') router.replace('/onboarding');
   }, [status]);
 
   return status === 'welcome' ? <WelcomeScreen /> : null;

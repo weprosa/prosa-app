@@ -27,14 +27,20 @@ export function OnboardingStep({
   onContinue,
   loading,
 }: OnboardingStepProps) {
-  const { current, total } = stepPosition(step);
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  const { current, total, previous } = stepPosition(step);
+  const showBack = router.canGoBack() || previous !== undefined;
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else if (previous) router.replace(previous.href);
+  };
 
   return (
     <Screen scroll>
       <View style={styles.topBar}>
         <View style={styles.back}>
-          <IconButton icon="chevron-back" accessibilityLabel="Voltar" onPress={goBack} />
+          {showBack ? (
+            <IconButton icon="chevron-back" accessibilityLabel="Voltar" onPress={goBack} />
+          ) : null}
         </View>
         <Text variant="bodySmall" color="textSecondary" style={styles.counter}>
           {current} de {total}
@@ -62,7 +68,7 @@ export function OnboardingStep({
 const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs },
   // Alinha o traço do ícone com a margem; a coluna vazia à direita centraliza o contador.
-  back: { width: sizes.touchTarget, marginLeft: -spacing.sm },
+  back: { width: sizes.touchTarget, minHeight: sizes.touchTarget, marginLeft: -spacing.sm },
   counter: { flex: 1, textAlign: 'center' },
   header: { gap: spacing.xxs, marginTop: spacing.lg, marginBottom: spacing.lg },
   body: { gap: spacing.md },

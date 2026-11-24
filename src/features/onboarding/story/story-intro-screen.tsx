@@ -15,12 +15,13 @@ import {
   TextButton,
 } from '@/design-system';
 
+import { LIFESTYLE_HREF } from '@/features/onboarding/steps';
 import { STORY_CHAPTERS } from '@/features/onboarding/story/chapters';
 import { useCompleteStory } from '@/features/onboarding/story/use-story';
 
 export function StoryIntroScreen() {
   const completeStory = useCompleteStory();
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/onboarding/profile'));
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace(LIFESTYLE_HREF));
 
   // Trava síncrona contra toque duplo antes do próximo render.
   const skipping = useRef(false);

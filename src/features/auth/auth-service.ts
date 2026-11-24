@@ -1,5 +1,7 @@
 import { api, ApiError, NetworkError } from '@/lib/api/client';
+import { fieldErrors } from '@/lib/api/errors';
 import { getGoogleIdToken, GoogleSignInError } from '@/lib/google-sign-in';
+import { queryClient } from '@/lib/query-client';
 import { saveSession } from '@/lib/session';
 
 // Contrato confirmado pela doc OpenAPI do back-end (Prosa API 0.0.1). Ver docs/adr/0008.
@@ -22,6 +24,8 @@ export type SignUpInput = { name: string; email: string; password: string };
 async function startSession({ user, token }: AuthResponse) {
   if (!token.access_token) throw new Error('Token ausente na resposta de autenticação.');
   await saveSession(token.access_token, token.expires_in);
+  // Dados em cache pertencem à conta anterior.
+  queryClient.clear();
   return user;
 }
 
@@ -88,8 +92,5 @@ export function authErrorMessage(error: unknown) {
 
 /** Primeiro erro de cada campo, vindo da validação (422) do Laravel. */
 export function authFieldErrors(error: unknown): Record<string, string> {
-  if (!(error instanceof ApiError)) return {};
-  return Object.fromEntries(
-    Object.entries(error.fieldErrors).map(([field, messages]) => [field, messages[0]]),
-  );
+  return fieldErrors(error);
 }
