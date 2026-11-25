@@ -1,4 +1,5 @@
 import { api } from '@/lib/api/client';
+import { cepDigits } from '@/lib/viacep';
 
 // Contrato confirmado pela OpenAPI Prosa API 0.0.1 de 2026-11-21 (ADR 0008).
 export type GenderIdentity = 'woman' | 'man' | 'non_binary';
@@ -21,6 +22,9 @@ export type OnboardingPreferences = {
   religion_importance: MatchImportance | null;
 };
 
+/** Desligado até o back-end publicar os campos de endereço (docs/adr/0013). Com false, eles não vão à rede. */
+export const ADDRESS_API_ENABLED = false;
+
 export type OnboardingUser = {
   id: number;
   nickname: string | null;
@@ -30,11 +34,28 @@ export type OnboardingUser = {
   latitude: number | null;
   longitude: number | null;
   preferences: OnboardingPreferences;
+  // Endereço: contrato proposto, ainda não publicado pelo back-end (docs/adr/0013).
+  /** Proposta: 8 dígitos, sem hífen. */
+  postal_code: string | null;
+  /** Proposta: logradouro sem número, até 150 caracteres. */
+  street: string | null;
+  /** Proposta: UF de 2 letras, por exemplo `SP`. */
+  state: string | null;
 };
 
-/** A API devolve `preferences: null` enquanto a pessoa não salvou nenhuma preferência. */
+type AddressKey = 'postal_code' | 'street' | 'state';
+
+/**
+ * A API devolve `preferences: null` enquanto a pessoa não salvou nenhuma preferência.
+ * Os campos de endereço são proposta: hoje a API não os manda.
+ */
 type OnboardingResponse = {
-  user: Omit<OnboardingUser, 'preferences'> & { preferences: OnboardingPreferences | null };
+  user: Omit<OnboardingUser, 'preferences' | AddressKey> & {
+    preferences: OnboardingPreferences | null;
+    postal_code?: string | null;
+    street?: string | null;
+    state?: string | null;
+  };
 };
 
 const EMPTY_PREFERENCES: OnboardingPreferences = {
@@ -57,6 +78,12 @@ export type ProfileInput = {
   city: string;
   latitude?: number | null;
   longitude?: number | null;
+  /** Proposta (docs/adr/0013). Aceita com ou sem hífen; vai à rede só com dígitos. */
+  postal_code?: string;
+  /** Proposta (docs/adr/0013). */
+  street?: string;
+  /** Proposta (docs/adr/0013): UF de 2 letras. */
+  state?: string;
 };
 
 export type PreferencesInput = {
@@ -80,7 +107,13 @@ async function request(
   options: { method?: 'PUT'; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<OnboardingUser> {
   const { user } = await api<OnboardingResponse>(`/v1/me/onboarding${path}`, options);
-  return { ...user, preferences: user.preferences ?? EMPTY_PREFERENCES };
+  return {
+    ...user,
+    preferences: user.preferences ?? EMPTY_PREFERENCES,
+    postal_code: user.postal_code ?? null,
+    street: user.street ?? null,
+    state: user.state ?? null,
+  };
 }
 
 export function fetchOnboarding(signal?: AbortSignal): Promise<OnboardingUser> {
@@ -88,7 +121,17 @@ export function fetchOnboarding(signal?: AbortSignal): Promise<OnboardingUser> {
 }
 
 export function updateProfile(input: ProfileInput): Promise<OnboardingUser> {
-  return request('/profile', { method: 'PUT', body: input });
+  const { postal_code, street, state, ...profile } = input;
+  // Com a chave desligada, o corpo é o mesmo do contrato confirmado (ADR 0008).
+  const body = ADDRESS_API_ENABLED
+    ? {
+        ...profile,
+        ...(postal_code !== undefined ? { postal_code: cepDigits(postal_code) } : {}),
+        ...(street !== undefined ? { street } : {}),
+        ...(state !== undefined ? { state } : {}),
+      }
+    : profile;
+  return request('/profile', { method: 'PUT', body });
 }
 
 export function updatePreferences(input: PreferencesInput): Promise<OnboardingUser> {

@@ -50,6 +50,7 @@ Pendências do onboarding:
 Proposto, sem rota no back-end:
 
 - Narrativa do onboarding (`/v1/profile/story`): contrato e chave de ativação no [ADR 0011](0011-narrativa-do-onboarding.md).
+- Campos de endereço no perfil (`postal_code`, `street`, `state` em `PUT /v1/me/onboarding/profile` e `GET /v1/me/onboarding`): contrato e chave de ativação no [ADR 0013](0013-endereco-por-cep.md).
 
 ## Consequências
 
