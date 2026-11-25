@@ -14,11 +14,14 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { colors, showToast, ToastHost } from '@/design-system';
 import { onSessionExpired } from '@/lib/api/client';
+import { resetLocationSync } from '@/lib/location-sync';
 import { queryClient } from '@/lib/query-client';
+import { useLocationSyncOnForeground } from '@/lib/use-location-sync';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  useLocationSyncOnForeground();
   const pathname = usePathname();
   // Importar cada peso pelo subcaminho mantém fora do bundle os pesos não usados.
   const [fontsLoaded, fontError] = useFonts({
@@ -37,6 +40,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     return onSessionExpired(() => {
+      resetLocationSync();
       queryClient.clear();
       showToast({
         tone: 'error',

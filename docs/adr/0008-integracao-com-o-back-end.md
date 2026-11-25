@@ -50,6 +50,7 @@ Pendências do onboarding:
 Proposto, sem rota no back-end:
 
 - Narrativa do onboarding (`/v1/profile/story`): contrato e chave de ativação no [ADR 0011](0011-narrativa-do-onboarding.md).
+- Posição do usuário (`PUT /v1/me/location`): contrato e chave de ativação no [ADR 0014](0014-sincronizacao-de-localizacao.md).
 
 ## Consequências
 
