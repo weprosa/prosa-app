@@ -17,6 +17,8 @@ export type LocationSyncStatus =
   | 'unchanged'
   /** Sem sessão válida: nada a enviar. */
   | 'no-session'
+  /** O servidor ainda não marcou o onboarding como concluído: nada a enviar. */
+  | 'onboarding-incomplete'
   | 'denied'
   | 'blocked'
   /** Sem GPS, timeout ou serviço de localização desligado. */
@@ -39,11 +41,15 @@ export type LocationSyncOptions = {
   signal?: AbortSignal;
 };
 
+type OnboardingStatusResponse = { user: { onboarding_completed?: boolean } };
+
 const SYNC_INTERVAL_MS = 10 * 60 * 1000;
 const PERMISSION_TIMEOUT_MS = 15_000;
 
 let lastSent: { latitude: number; longitude: number; sentAt: number } | null = null;
 let inFlight: Promise<LocationSyncResult> | null = null;
+/** `onboarding_completed` só volta a false trocando de conta, então guardamos o true. */
+let onboardingCompleted = false;
 /** Se a operação em andamento pode mostrar o diálogo de permissão. */
 let inFlightPrompts = false;
 let generation = 0;
@@ -51,6 +57,7 @@ let generation = 0;
 /** Limpa a deduplicação e invalida operações pendentes ao encerrar ou trocar a sessão. */
 export function resetLocationSync(): void {
   lastSent = null;
+  onboardingCompleted = false;
   inFlight = null;
   generation += 1;
 }
@@ -95,6 +102,19 @@ async function performSync(
       return { status: 'no-session' };
     }
     if (signal?.aborted) return { status: 'failed' };
+
+    // A posição só interessa depois do onboarding (o servidor marca ao salvar o estilo de
+    // vida). Antes disso, nem pedimos permissão nem lemos o GPS.
+    if (!onboardingCompleted) {
+      try {
+        const { user } = await api<OnboardingStatusResponse>('/v1/me/onboarding', { signal });
+        if (currentGeneration !== generation) return { status: 'no-session' };
+        if (user.onboarding_completed !== true) return { status: 'onboarding-incomplete' };
+        onboardingCompleted = true;
+      } catch {
+        return { status: 'failed' };
+      }
+    }
 
     const permission = await checkPermission(prompt);
     if (currentGeneration !== generation) return { status: 'no-session' };

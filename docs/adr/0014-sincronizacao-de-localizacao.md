@@ -15,6 +15,7 @@ Hoje, o único envio de coordenadas previsto no contrato confirmado é o par opc
 
 - No fim do onboarding, a tela "Tudo pronto" explica por que a localização é necessária. Só depois o app pede permissão de localização em uso, via `src/lib/permissions.ts`, lê a posição e a envia se a permissão for concedida.
 - A cada abertura do app e volta do segundo plano, o app lê e envia a posição somente se a permissão já estiver concedida. Essas chamadas nunca mostram o diálogo de permissão do sistema, respeitando o [ADR 0006](0006-permissoes.md).
+- Só depois do onboarding: antes de pedir permissão ou ler o GPS, o app confere `onboarding_completed` em `GET /v1/me/onboarding` (confirmado pelo back-end) e não envia nada enquanto for `false` (resultado `onboarding-incomplete`). O `true` fica em memória até a sessão mudar.
 - Com permissão negada ou bloqueada, o app continua utilizável. A proposta é que o back-end use a cidade do perfil ou a última posição conhecida. Em caso de bloqueio, a tela explica e oferece abrir os Ajustes, como prevê o ADR 0006.
 
 **Precisão e deduplicação**
@@ -52,5 +53,5 @@ O back-end usa a última posição salva e `maximum_distance_km` das preferênci
 
 - Para ativar o envio, o back-end precisa publicar a rota e confirmar o contrato; depois, o app muda `LOCATION_API_ENABLED` para `true`.
 - Enquanto a chave estiver em `false`, nenhuma coordenada é enviada pela sincronização. Continua apenas o envio que a etapa de perfil já faz pelo contrato confirmado.
-- Continua sem existir uma forma de a pessoa retirar a localização já compartilhada, pendência registrada no ADR 0008. Negar ou revogar a permissão não apaga a posição salva no servidor.
+- `PUT /v1/me/onboarding/profile` sem coordenadas agora apaga a posição salva, inclusive a enviada por esta sincronização. Por isso a etapa de perfil sempre manda o par de coordenadas (ver ADR 0008). Negar ou revogar a permissão continua sem apagar a posição salva no servidor.
 - Localização em segundo plano segue fora do MVP. A sincronização ocorre com o app em uso, inclusive ao voltar do segundo plano.

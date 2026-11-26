@@ -166,7 +166,10 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
         birth_date: birthDate,
         gender_identity: gender,
         city: trimmedCity,
-        ...(position ?? {}),
+        // O PUT sem coordenadas apaga as salvas no servidor. Por isso sempre mandamos o par:
+        // as já salvas (cidade intacta), as lidas agora, ou null quando a cidade mudou à mão.
+        latitude: position?.latitude ?? null,
+        longitude: position?.longitude ?? null,
         target_genders: interestToTargetGenders(interest),
       },
       {

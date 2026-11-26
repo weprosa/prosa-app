@@ -53,6 +53,7 @@ export function StoryDoneScreen() {
         case 'sent':
         case 'unchanged':
         case 'no-session':
+        case 'onboarding-incomplete':
           completeOnboarding();
           break;
         case 'denied':
