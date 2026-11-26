@@ -41,15 +41,16 @@ Pendências do onboarding:
 
 - Não existe GET de catálogo de religiões. `RELIGION_OPTIONS` é uma lista provisória no app que espelha os IDs e nomes do `ReligionSeeder`; precisa ser substituída quando o catálogo for publicado.
 - O 422 responde `{ message: "Dados inválidos.", code: "validation_error", errors }`, mas as mensagens por campo estão em inglês. As telas devem validar em pt-BR no cliente; o 422 permanece como proteção adicional.
-- Não existe flag de onboarding concluído. A retomada usa os campos preenchidos; quem deixar todo o estilo de vida vazio retorna à etapa 3 ao entrar novamente.
+- O back-end publicou `onboarding_completed` em `GET /v1/me/onboarding` (vira `true` ao salvar o estilo de vida, back-end em 2026-11-25). A sincronização de localização já o usa ([ADR 0014](0014-sincronizacao-de-localizacao.md)); a retomada do onboarding ainda usa os campos preenchidos, e quem deixar todo o estilo de vida vazio retorna à etapa 3 ao entrar novamente.
 - A API não aceita "Prefiro não dizer" para gênero. As novas opções compartilhadas contêm apenas Homem, Mulher e Não-binário.
 - `birth_date` só é validado como anterior a hoje: a API aceita menores de 18 anos. O app bloqueia no cliente, mas a regra precisa existir no servidor.
-- `PUT /v1/me/onboarding/profile` sem `latitude`/`longitude` mantém as coordenadas anteriores: não há como a pessoa retirar a localização já compartilhada.
+- Desde 2026-11-25, `PUT /v1/me/onboarding/profile` sem `latitude`/`longitude` **apaga** as coordenadas salvas (antes as mantinha). A etapa de perfil sempre manda o par: as coordenadas já salvas, as lidas agora, ou `null` quando a pessoa troca a cidade à mão. Isso também dá à pessoa um jeito de retirar a localização.
 - Trocar o interesse na etapa 1 depois de salvar as preferências exige um segundo PUT (`/preferences`) com todos os campos, porque `target_genders` só existe ali.
 
 Proposto, sem rota no back-end:
 
 - Narrativa do onboarding (`/v1/profile/story`): contrato e chave de ativação no [ADR 0011](0011-narrativa-do-onboarding.md).
+- Posição do usuário (`PUT /v1/me/location`): contrato e chave de ativação no [ADR 0014](0014-sincronizacao-de-localizacao.md).
 
 ## Consequências
 

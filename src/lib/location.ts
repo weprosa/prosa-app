@@ -47,6 +47,18 @@ async function readPosition(timeoutMs: number) {
   );
 }
 
+/** Lê sem pedir permissão e reduz a precisão antes de compartilhar as coordenadas. */
+export async function readRoundedCoordinates({ timeoutMs = POSITION_TIMEOUT_MS } = {}): Promise<{
+  latitude: number;
+  longitude: number;
+}> {
+  const { coords } = await readPosition(timeoutMs);
+  return {
+    latitude: Number(coords.latitude.toFixed(2)),
+    longitude: Number(coords.longitude.toFixed(2)),
+  };
+}
+
 /** Captura pontual, com consentimento em uso. A cidade é apenas uma sugestão. */
 export async function getCurrentLocation({
   reverseGeocode = true,
