@@ -20,7 +20,7 @@ import { cepDigits, formatCep, isCompleteCep, lookupCep } from '@/lib/viacep';
 
 import { OnboardingDataGate } from './components/onboarding-data-gate';
 import { OnboardingStep } from './components/onboarding-step';
-import { showOnboardingError } from './onboarding-errors';
+import { apiFieldErrors, showOnboardingError } from './onboarding-errors';
 import {
   GENDER_OPTIONS,
   INTEREST_OPTIONS,
@@ -48,6 +48,7 @@ type ProfileFields = {
   birthDate: string | null;
   postalCode: string;
   street: string;
+  neighborhood: string;
   city: string;
   state: BrazilianState | null;
   gender: GenderIdentity | null;
@@ -55,6 +56,17 @@ type ProfileFields = {
   coordinates: Coordinates | null;
 };
 type Errors = Partial<Record<Exclude<keyof ProfileFields, 'coordinates'>, string>>;
+
+const PROFILE_API_FIELDS = {
+  nickname: 'name',
+  birth_date: 'birthDate',
+  gender_identity: 'gender',
+  postal_code: 'postalCode',
+  street: 'street',
+  neighborhood: 'neighborhood',
+  city: 'city',
+  state: 'state',
+} as const satisfies Record<string, keyof Errors>;
 
 function isValidBirthDate(value: string | null): value is string {
   return !!value && value >= minimumBirthDate() && value <= maximumBirthDate();
@@ -72,6 +84,7 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
   const saveProfile = useSaveProfile();
   const submitting = useRef(false);
   const streetRef = useRef<TextFieldRef>(null);
+  const neighborhoodRef = useRef<TextFieldRef>(null);
   const cityRef = useRef<TextFieldRef>(null);
   const { fontScale } = useWindowDimensions();
   const fieldLayout = { flexBasis: sizes.fieldMinWidth * Math.min(fontScale, MAX_FONT_SCALE) };
@@ -80,6 +93,7 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
     birthDate: user.birth_date,
     postalCode: formatCep(user.postal_code ?? ''),
     street: user.street ?? '',
+    neighborhood: user.neighborhood ?? '',
     city: user.city ?? '',
     state: user.state !== null && isBrazilianState(user.state) ? user.state : null,
     gender: user.gender_identity,
@@ -96,7 +110,8 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
   const [searchingCep, setSearchingCep] = useState(false);
   // Busca de CEP em andamento. Uma busca nova, a edição do CEP ou sair da tela a cancelam.
   const cepLookup = useRef<AbortController | null>(null);
-  const { name, birthDate, postalCode, street, city, state, gender, interest } = fields;
+  const { name, birthDate, postalCode, street, neighborhood, city, state, gender, interest } =
+    fields;
 
   useEffect(() => {
     return () => {
@@ -158,6 +173,7 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
             postalCode: address.cep,
             // CEP de cidade pequena vem sem rua: só mantém a digitada se o lugar for o mesmo.
             street: address.street || (sameLocality ? current.street : ''),
+            neighborhood: address.neighborhood || (sameLocality ? current.neighborhood : ''),
             city: address.city,
             state: nextState,
             // Mesma regra da edição manual: lugar novo invalida as coordenadas antigas.
@@ -169,6 +185,7 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
           postalCode: undefined,
           city: undefined,
           ...(address.street ? { street: undefined } : {}),
+          ...(address.neighborhood ? { neighborhood: undefined } : {}),
           ...(foundState ? { state: undefined } : {}),
         }));
         if (!address.street) streetRef.current?.focus();
@@ -238,6 +255,7 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
     const nickname = name.trim();
     const postalDigits = cepDigits(postalCode);
     const trimmedStreet = street.trim();
+    const trimmedNeighborhood = neighborhood.trim();
     const trimmedCity = city.trim();
     if (!nickname) next.name = 'Diga como você quer ser chamado.';
     else if (nickname.length < 2 || nickname.length > 100) {
@@ -251,6 +269,7 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
     else if (trimmedStreet.length < 2 || trimmedStreet.length > 150) {
       next.street = 'Use de 2 a 150 caracteres.';
     }
+    if (trimmedNeighborhood.length > 100) next.neighborhood = 'Use até 100 caracteres.';
     if (!trimmedCity) next.city = 'Informe sua cidade.';
     else if (trimmedCity.length < 2 || trimmedCity.length > 100) {
       next.city = 'Use de 2 a 100 caracteres.';
@@ -277,6 +296,7 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
         gender_identity: gender,
         postal_code: postalDigits,
         street: trimmedStreet,
+        neighborhood: trimmedNeighborhood || null,
         city: trimmedCity,
         state,
         ...(position ?? {}),
@@ -284,7 +304,15 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
       },
       {
         onSuccess: () => router.push(PREFERENCES_HREF),
-        onError: showOnboardingError,
+        onError: (error) => {
+          const fieldErrors = apiFieldErrors(error);
+          const next: Errors = {};
+          for (const [apiField, formField] of Object.entries(PROFILE_API_FIELDS)) {
+            if (fieldErrors[apiField]) next[formField] = fieldErrors[apiField];
+          }
+          if (Object.keys(next).length > 0) setErrors(next);
+          showOnboardingError(error);
+        },
         onSettled: () => {
           submitting.current = false;
         },
@@ -347,12 +375,27 @@ function ProfileForm({ user }: { user: OnboardingUser }) {
         placeholder="Rua ou avenida, sem o número"
         value={street}
         onChangeText={(value) => changeField('street', value)}
-        onSubmitEditing={() => cityRef.current?.focus()}
+        onSubmitEditing={() => neighborhoodRef.current?.focus()}
         error={errors.street}
         autoCapitalize="words"
         keyboardType="default"
         returnKeyType="next"
         maxLength={150}
+      />
+      <TextField
+        ref={neighborhoodRef}
+        label="Bairro (opcional)"
+        placeholder="Seu bairro"
+        value={neighborhood}
+        onChangeText={(value) => changeField('neighborhood', value)}
+        onSubmitEditing={() => cityRef.current?.focus()}
+        error={errors.neighborhood}
+        autoCapitalize="words"
+        autoComplete="postal-address-dependent-locality"
+        textContentType="sublocality"
+        keyboardType="default"
+        returnKeyType="next"
+        maxLength={100}
       />
       <View style={styles.row}>
         <View style={[styles.field, fieldLayout]}>

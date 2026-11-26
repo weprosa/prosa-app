@@ -3,6 +3,7 @@
 export type CepAddress = {
   cep: string;
   street: string;
+  neighborhood: string;
   city: string;
   state: string;
 };
@@ -88,6 +89,7 @@ export async function lookupCep(
       address: {
         cep: formatCep(digits),
         street: data.logradouro.trim(),
+        neighborhood: 'bairro' in data && typeof data.bairro === 'string' ? data.bairro.trim() : '',
         city: data.localidade,
         state: data.uf.toUpperCase(),
       },

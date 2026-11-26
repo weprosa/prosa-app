@@ -1,7 +1,7 @@
 import { api } from '@/lib/api/client';
 import { cepDigits } from '@/lib/viacep';
 
-// Contrato confirmado pela OpenAPI Prosa API 0.0.1 de 2026-11-21 (ADR 0008).
+// Contrato da OpenAPI do prosa-api em main, commit 235b623 (2026-11-26).
 export type GenderIdentity = 'woman' | 'man' | 'non_binary';
 export type RelationshipIntention = 'serious_relationship' | 'casual' | 'open_to_exploring';
 export type ChildSituation =
@@ -22,39 +22,37 @@ export type OnboardingPreferences = {
   religion_importance: MatchImportance | null;
 };
 
-/** Desligado até o back-end publicar os campos de endereço (docs/adr/0013). Com false, eles não vão à rede. */
-export const ADDRESS_API_ENABLED = false;
-
 export type OnboardingUser = {
   id: number;
   nickname: string | null;
   birth_date: string | null;
   gender_identity: GenderIdentity | null;
+  postal_code: string | null;
+  street: string | null;
+  neighborhood: string | null;
   city: string | null;
+  state: string | null;
   latitude: number | null;
   longitude: number | null;
+  onboarding_completed: boolean;
   preferences: OnboardingPreferences;
-  // Endereço: contrato proposto, ainda não publicado pelo back-end (docs/adr/0013).
-  /** Proposta: 8 dígitos, sem hífen. */
-  postal_code: string | null;
-  /** Proposta: logradouro sem número, até 150 caracteres. */
-  street: string | null;
-  /** Proposta: UF de 2 letras, por exemplo `SP`. */
-  state: string | null;
 };
 
-type AddressKey = 'postal_code' | 'street' | 'state';
+type AddressKey = 'postal_code' | 'street' | 'neighborhood' | 'city' | 'state';
 
 /**
  * A API devolve `preferences: null` enquanto a pessoa não salvou nenhuma preferência.
- * Os campos de endereço são proposta: hoje a API não os manda.
+ * Versões anteriores podem omitir campos de endereço e a conclusão do onboarding.
  */
 type OnboardingResponse = {
-  user: Omit<OnboardingUser, 'preferences' | AddressKey> & {
+  user: Omit<OnboardingUser, 'preferences' | AddressKey | 'onboarding_completed'> & {
     preferences: OnboardingPreferences | null;
     postal_code?: string | null;
     street?: string | null;
+    neighborhood?: string | null;
+    city?: string | null;
     state?: string | null;
+    onboarding_completed?: boolean;
   };
 };
 
@@ -75,15 +73,13 @@ export type ProfileInput = {
   nickname: string;
   birth_date: string;
   gender_identity: GenderIdentity;
+  postal_code: string;
+  street: string;
+  neighborhood?: string | null;
   city: string;
+  state: string;
   latitude?: number | null;
   longitude?: number | null;
-  /** Proposta (docs/adr/0013). Aceita com ou sem hífen; vai à rede só com dígitos. */
-  postal_code?: string;
-  /** Proposta (docs/adr/0013). */
-  street?: string;
-  /** Proposta (docs/adr/0013): UF de 2 letras. */
-  state?: string;
 };
 
 export type PreferencesInput = {
@@ -112,7 +108,10 @@ async function request(
     preferences: user.preferences ?? EMPTY_PREFERENCES,
     postal_code: user.postal_code ?? null,
     street: user.street ?? null,
+    neighborhood: user.neighborhood ?? null,
+    city: user.city ?? null,
     state: user.state ?? null,
+    onboarding_completed: user.onboarding_completed ?? false,
   };
 }
 
@@ -121,16 +120,14 @@ export function fetchOnboarding(signal?: AbortSignal): Promise<OnboardingUser> {
 }
 
 export function updateProfile(input: ProfileInput): Promise<OnboardingUser> {
-  const { postal_code, street, state, ...profile } = input;
-  // Com a chave desligada, o corpo é o mesmo do contrato confirmado (ADR 0008).
-  const body = ADDRESS_API_ENABLED
-    ? {
-        ...profile,
-        ...(postal_code !== undefined ? { postal_code: cepDigits(postal_code) } : {}),
-        ...(street !== undefined ? { street } : {}),
-        ...(state !== undefined ? { state } : {}),
-      }
-    : profile;
+  const { postal_code, neighborhood, latitude, longitude, ...profile } = input;
+  const body = {
+    ...profile,
+    postal_code: cepDigits(postal_code),
+    neighborhood: neighborhood?.trim() || null,
+    ...(latitude !== undefined ? { latitude } : {}),
+    ...(longitude !== undefined ? { longitude } : {}),
+  };
   return request('/profile', { method: 'PUT', body });
 }
 

@@ -1,13 +1,14 @@
 # 0013. Endereço pelo CEP com ViaCEP
 
-- Status: Aceito para o app; contrato da API proposto
+- Status: Aceito; contrato confirmado pela API (prosa-api main 235b623, 2026-11-26)
 - Data: 2026-11-24
+- Revisão: 2026-11-26
 
 ## Contexto
 
-O cadastro passa a pedir CEP, logradouro, cidade e estado. Digitar tudo à mão é cansativo e gera erro, então o CEP preenche os demais campos pelo ViaCEP, um serviço público de consulta de endereços.
+O cadastro passa a pedir CEP, logradouro, bairro (opcional), cidade e estado. Digitar tudo à mão é cansativo e gera erro, então o CEP preenche os demais campos pelo ViaCEP, um serviço público de consulta de endereços.
 
-O back-end ainda não tem campos de endereço no perfil. O contrato abaixo é uma proposta, a confirmar com os responsáveis, conforme o [ADR 0008](0008-integracao-com-o-back-end.md).
+O back-end já aceita e salva os campos de endereço no perfil. O contrato foi confirmado no código e na OpenAPI do prosa-api (main 235b623), conforme o [ADR 0008](0008-integracao-com-o-back-end.md).
 
 ## Decisão
 
@@ -16,22 +17,25 @@ O back-end ainda não tem campos de endereço no perfil. O contrato abaixo é um
 - O app consulta o ViaCEP diretamente, em `src/lib/viacep.ts`. O serviço é público e não usa chave nem token, então nenhum segredo entra no app.
 - A consulta só dispara pelo botão ao lado do campo CEP ou pela tecla de envio do teclado nesse campo. Nunca roda a cada tecla.
 - Todos os campos continuam editáveis: o que o ViaCEP devolve é uma sugestão, e a pessoa pode corrigir ou preencher à mão.
+- A etapa 1 inclui o campo Bairro (opcional), preenchido pelo ViaCEP quando houver essa informação.
 - O estado é escolhido de uma lista fechada com as 27 UFs, nunca digitado.
 - O botão ao lado do campo é a prop `action` do `TextField`, documentada em `DESIGN.md`.
 
-**Contrato proposto (não publicado pelo back-end)**
+**Contrato da API**
 
-Três campos novos no perfil, enviados em `PUT /v1/me/onboarding/profile` e devolvidos em `GET /v1/me/onboarding`:
+Campos enviados em `PUT /v1/me/onboarding/profile` e devolvidos nas respostas dos PUTs e em `GET /v1/me/onboarding`:
 
-| Campo         | Formato                            |
-| ------------- | ---------------------------------- |
-| `postal_code` | 8 dígitos, sem hífen               |
-| `street`      | texto, até 150 caracteres          |
-| `state`       | UF de 2 letras (por exemplo, `SP`) |
+| Campo          | Regra no back-end                             | O que o app envia                                      |
+| -------------- | --------------------------------------------- | ------------------------------------------------------ |
+| `postal_code`  | Opcional ou `null`; texto, até 20 caracteres  | 8 dígitos, sem hífen                                   |
+| `street`       | Opcional ou `null`; texto, até 255 caracteres | Logradouro sem número, até 150 caracteres              |
+| `neighborhood` | Opcional ou `null`; texto, até 100 caracteres | Bairro opcional, até 100 caracteres; vazio vira `null` |
+| `city`         | Opcional ou `null`; texto, até 100 caracteres | Cidade obrigatória no app, até 100 caracteres          |
+| `state`        | Opcional ou `null`; texto, até 100 caracteres | UF de 2 letras (por exemplo, `SP`)                     |
 
-- `city` já existe no contrato confirmado e continua igual.
-- A chave `ADDRESS_API_ENABLED` fica em `false` em `src/features/onboarding/onboarding-service.ts` e só será ligada depois que o back-end publicar os campos.
-- Com a chave desligada, só `city` é enviada. CEP, logradouro e estado ficam como rascunho no cache em memória (`use-onboarding.ts`): sobrevivem a ir e voltar entre as etapas na mesma sessão, mas se perdem ao fechar o app ou entrar em outro aparelho, e a pessoa precisa preenchê-los de novo.
+- Os cinco campos estão sempre presentes nas respostas, como texto ou `null`.
+- A chave `ADDRESS_API_ENABLED` e o rascunho de endereço em memória foram removidos. O endereço agora é enviado e salvo no back-end.
+- Se `latitude` e `longitude` não forem enviadas, o back-end grava ambas como `null`, mesmo que houvesse coordenadas anteriores.
 
 **Privacidade**
 
@@ -39,13 +43,11 @@ Segue a regra 4 do [PRODUCT.md](../../PRODUCT.md) e o [ADR 0006](0006-permissoes
 
 - O CEP digitado vai a um terceiro, o ViaCEP, que recebe o CEP e o IP da pessoa. A consulta só acontece por ação explícita.
 - Pedimos o logradouro sem número, para não identificar a casa da pessoa.
-- O endereço nunca aparece para outras pessoas.
+- O endereço, incluindo o bairro, nunca aparece para outras pessoas.
 - A precisão usada no match continua a das coordenadas arredondadas a duas casas decimais: o endereço não a aumenta.
 
 ## Consequências
 
 - ViaCEP fora do ar, sem rede ou CEP inexistente não bloqueia o cadastro: a pessoa preenche logradouro, cidade e estado à mão.
-- Com `ADDRESS_API_ENABLED = false`, o endereço completo não é guardado entre sessões nem enviado. Só `city` chega ao back-end.
-- Pendências a confirmar com o back-end: nomes, limites e obrigatoriedade de `postal_code`, `street` e `state`, a validação da UF e do CEP no servidor e o formato dos erros 422.
-- Revisar este ADR quando o contrato existir, e ligar a chave só então.
+- A API aceita `state` como texto livre de até 100 caracteres e `postal_code` como texto livre de até 20. A validação da UF e dos 8 dígitos do CEP é feita só pelo app.
 - O app passa a depender de um serviço de terceiros na etapa de endereço. Se isso se tornar um problema, a consulta pode migrar para o back-end sem mudar as telas.
