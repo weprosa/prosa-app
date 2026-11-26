@@ -30,18 +30,21 @@ export function stepPosition(id: OnboardingStepId) {
 }
 
 export function nextOnboardingHref(user: OnboardingUser) {
+  // A conclusão da etapa 3 vale mesmo quando todo o estilo de vida ficou vazio.
+  if (user.onboarding_completed) return STORY_HREF;
+
   const { preferences } = user;
   const profileIncomplete =
-    !user.nickname?.trim() || !user.birth_date || !user.gender_identity || !user.city?.trim();
+    !user.nickname?.trim() ||
+    !user.birth_date?.trim() ||
+    !user.gender_identity?.trim() ||
+    !user.city?.trim() ||
+    !user.postal_code?.trim() ||
+    !user.street?.trim() ||
+    !user.state?.trim();
 
   // O interesse da etapa 1 só é persistido ao salvar as preferências na etapa 2.
   if (profileIncomplete || preferences.relationship_intention === null) return PROFILE_HREF;
 
-  const lifestyleEmpty =
-    preferences.alcohol_frequency === null &&
-    preferences.smoking_frequency === null &&
-    preferences.religion === null &&
-    preferences.religion_importance === null;
-
-  return lifestyleEmpty ? LIFESTYLE_HREF : STORY_HREF;
+  return LIFESTYLE_HREF;
 }

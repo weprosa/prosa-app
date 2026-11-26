@@ -34,46 +34,50 @@ export function useSaveProfile(): UseMutationResult<OnboardingUser, Error, SaveP
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ target_genders, ...profile }) => {
-      const user = await updateProfile(profile);
-      const preferences = user.preferences;
-      if (preferences.relationship_intention !== null) {
-        const currentGenders = preferences.target_genders;
-        const interestChanged =
-          currentGenders?.length !== target_genders.length ||
-          target_genders.some((gender) => !currentGenders?.includes(gender));
-        if (!interestChanged) return user;
-
-        const { minimum_age, maximum_age, maximum_distance_km, target_child_situation } =
-          preferences;
-        if (
-          minimum_age === null ||
-          maximum_age === null ||
-          maximum_distance_km === null ||
-          target_child_situation === null
-        ) {
-          throw new Error('As preferências salvas estão incompletas.');
-        }
-        return updatePreferences({
-          minimum_age,
-          maximum_age,
-          maximum_distance_km,
-          relationship_intention: preferences.relationship_intention,
-          target_child_situation,
-          target_genders,
-        });
-      }
-
-      // Antes da etapa 2, o interesse continua apenas como rascunho em memória.
-      return {
-        ...user,
-        preferences: { ...user.preferences, target_genders: [...target_genders] },
-      };
-    },
+    mutationFn: ({ target_genders, ...profile }) => saveProfileAndInterest(profile, target_genders),
     onSuccess: (user) => {
       queryClient.setQueryData<OnboardingUser>(onboardingQueryKey, user);
     },
   });
+}
+
+async function saveProfileAndInterest(
+  profile: ProfileInput,
+  target_genders: GenderIdentity[],
+): Promise<OnboardingUser> {
+  const user = await updateProfile(profile);
+  const preferences = user.preferences;
+  if (preferences.relationship_intention !== null) {
+    const currentGenders = preferences.target_genders;
+    const interestChanged =
+      currentGenders?.length !== target_genders.length ||
+      target_genders.some((gender) => !currentGenders?.includes(gender));
+    if (!interestChanged) return user;
+
+    const { minimum_age, maximum_age, maximum_distance_km, target_child_situation } = preferences;
+    if (
+      minimum_age === null ||
+      maximum_age === null ||
+      maximum_distance_km === null ||
+      target_child_situation === null
+    ) {
+      throw new Error('As preferências salvas estão incompletas.');
+    }
+    return updatePreferences({
+      minimum_age,
+      maximum_age,
+      maximum_distance_km,
+      relationship_intention: preferences.relationship_intention,
+      target_child_situation,
+      target_genders,
+    });
+  }
+
+  // Antes da etapa 2, o interesse continua apenas como rascunho em memória.
+  return {
+    ...user,
+    preferences: { ...user.preferences, target_genders: [...target_genders] },
+  };
 }
 
 export function useSavePreferences(): UseMutationResult<OnboardingUser, Error, PreferencesInput> {

@@ -27,6 +27,14 @@ export type TextFieldProps = Omit<TextInputProps, 'style' | 'placeholderTextColo
     disabled?: boolean;
     busy?: boolean;
   };
+  /** Botão independente, fora da caixa do campo, à direita. */
+  action?: {
+    icon: ComponentProps<typeof Ionicons>['name'];
+    accessibilityLabel: string;
+    onPress: () => void;
+    disabled?: boolean;
+    busy?: boolean;
+  };
 };
 
 /** Tipo do `ref` de um TextField (para `.focus()` no campo seguinte). */
@@ -37,6 +45,7 @@ export function TextField({
   error,
   icon,
   iconAction,
+  action,
   secureTextEntry,
   onFocus,
   onBlur,
@@ -48,88 +57,125 @@ export function TextField({
   const isPassword = !!secureTextEntry;
   const [revealed, setRevealed] = useState(false);
 
+  const input = (
+    <View style={action ? [styles.inputWrap, styles.inputWithAction] : styles.inputWrap}>
+      {icon && !iconAction ? (
+        <Ionicons
+          name={icon}
+          size={sizes.fieldIcon}
+          color={colors.text}
+          style={styles.icon}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      ) : null}
+      <TextInput
+        ref={ref}
+        accessibilityLabel={label}
+        accessibilityHint={error}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        placeholderTextColor={colors.textPlaceholder}
+        selectionColor={colors.primary}
+        cursorColor={colors.primary}
+        {...rest}
+        secureTextEntry={isPassword && !revealed}
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
+        style={[
+          styles.input,
+          !!icon && styles.inputWithIcon,
+          !!icon && !!iconAction && styles.inputWithIconAction,
+          isPassword && styles.inputWithToggle,
+          focused && styles.inputFocused,
+          !!error && styles.inputError,
+        ]}
+      />
+      {icon && iconAction ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={iconAction.accessibilityLabel}
+          accessibilityState={{
+            disabled: !!iconAction.disabled || !!iconAction.busy,
+            busy: !!iconAction.busy,
+          }}
+          disabled={iconAction.disabled || iconAction.busy}
+          onPress={iconAction.onPress}
+          style={({ pressed }) => [styles.iconAction, pressed && styles.iconActionPressed]}
+        >
+          {iconAction.busy ? (
+            <ActivityIndicator size="small" color={colors.textSecondary} />
+          ) : (
+            <Ionicons
+              name={icon}
+              size={sizes.fieldIcon}
+              color={iconAction.disabled ? colors.textSecondary : colors.text}
+              accessible={false}
+              importantForAccessibility="no"
+            />
+          )}
+        </Pressable>
+      ) : null}
+      {isPassword ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={revealed ? 'Ocultar senha' : 'Mostrar senha'}
+          onPress={() => setRevealed((value) => !value)}
+          hitSlop={spacing.xxs}
+          style={styles.toggle}
+        >
+          <Ionicons
+            name={revealed ? 'eye-off-outline' : 'eye-outline'}
+            size={22}
+            color={colors.textSecondary}
+          />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Text variant="label">{label}</Text>
-      <View style={styles.inputWrap}>
-        {icon && !iconAction ? (
-          <Ionicons
-            name={icon}
-            size={sizes.fieldIcon}
-            color={colors.text}
-            style={styles.icon}
-            accessible={false}
-            importantForAccessibility="no"
-          />
-        ) : null}
-        <TextInput
-          ref={ref}
-          accessibilityLabel={label}
-          accessibilityHint={error}
-          maxFontSizeMultiplier={MAX_FONT_SCALE}
-          placeholderTextColor={colors.textPlaceholder}
-          selectionColor={colors.primary}
-          cursorColor={colors.primary}
-          {...rest}
-          secureTextEntry={isPassword && !revealed}
-          onFocus={(event) => {
-            setFocused(true);
-            onFocus?.(event);
-          }}
-          onBlur={(event) => {
-            setFocused(false);
-            onBlur?.(event);
-          }}
-          style={[
-            styles.input,
-            !!icon && styles.inputWithIcon,
-            !!icon && !!iconAction && styles.inputWithIconAction,
-            isPassword && styles.inputWithToggle,
-            focused && styles.inputFocused,
-            !!error && styles.inputError,
-          ]}
-        />
-        {icon && iconAction ? (
+      {action ? (
+        <View style={styles.actionRow}>
+          {input}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={iconAction.accessibilityLabel}
+            accessibilityLabel={action.accessibilityLabel}
             accessibilityState={{
-              disabled: !!iconAction.disabled || !!iconAction.busy,
-              busy: !!iconAction.busy,
+              disabled: !!action.disabled || !!action.busy,
+              busy: !!action.busy,
             }}
-            disabled={iconAction.disabled || iconAction.busy}
-            onPress={iconAction.onPress}
-            style={({ pressed }) => [styles.iconAction, pressed && styles.iconActionPressed]}
+            disabled={action.disabled || action.busy}
+            onPress={action.onPress}
+            style={({ pressed }) => [
+              styles.action,
+              pressed && styles.iconActionPressed,
+              action.disabled && styles.actionDisabled,
+            ]}
           >
-            {iconAction.busy ? (
-              <ActivityIndicator size="small" color={colors.textSecondary} />
+            {action.busy ? (
+              <ActivityIndicator size="small" color={colors.primary} />
             ) : (
               <Ionicons
-                name={icon}
+                name={action.icon}
                 size={sizes.fieldIcon}
-                color={iconAction.disabled ? colors.textSecondary : colors.text}
+                color={colors.text}
                 accessible={false}
                 importantForAccessibility="no"
               />
             )}
           </Pressable>
-        ) : null}
-        {isPassword ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={revealed ? 'Ocultar senha' : 'Mostrar senha'}
-            onPress={() => setRevealed((value) => !value)}
-            hitSlop={spacing.xxs}
-            style={styles.toggle}
-          >
-            <Ionicons
-              name={revealed ? 'eye-off-outline' : 'eye-outline'}
-              size={22}
-              color={colors.textSecondary}
-            />
-          </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : (
+        input
+      )}
       {error ? (
         <Text variant="bodySmall" color="danger" accessibilityLiveRegion="polite">
           {error}
@@ -154,6 +200,20 @@ const styles = StyleSheet.create({
     fontSize: typography.body.fontSize,
   },
   inputWrap: { justifyContent: 'center' },
+  inputWithAction: { flex: 1, minWidth: 0 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  action: {
+    width: sizes.field,
+    height: sizes.field,
+    minHeight: sizes.touchTarget,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.field,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionDisabled: { opacity: 0.45 },
   icon: { position: 'absolute', left: spacing.md, zIndex: 1 },
   // Ícone (20) + respiro (8) depois da margem interna.
   inputWithIcon: { paddingLeft: spacing.md + 28 },

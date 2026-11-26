@@ -1,6 +1,7 @@
 import { api } from '@/lib/api/client';
+import { cepDigits } from '@/lib/viacep';
 
-// Contrato confirmado pela OpenAPI Prosa API 0.0.1 de 2026-11-21 (ADR 0008).
+// Contrato da OpenAPI do prosa-api em main, commit 235b623 (2026-11-26).
 export type GenderIdentity = 'woman' | 'man' | 'non_binary';
 export type RelationshipIntention = 'serious_relationship' | 'casual' | 'open_to_exploring';
 export type ChildSituation =
@@ -26,15 +27,33 @@ export type OnboardingUser = {
   nickname: string | null;
   birth_date: string | null;
   gender_identity: GenderIdentity | null;
+  postal_code: string | null;
+  street: string | null;
+  neighborhood: string | null;
   city: string | null;
+  state: string | null;
   latitude: number | null;
   longitude: number | null;
+  onboarding_completed: boolean;
   preferences: OnboardingPreferences;
 };
 
-/** A API devolve `preferences: null` enquanto a pessoa não salvou nenhuma preferência. */
+type AddressKey = 'postal_code' | 'street' | 'neighborhood' | 'city' | 'state';
+
+/**
+ * A API devolve `preferences: null` enquanto a pessoa não salvou nenhuma preferência.
+ * Versões anteriores podem omitir campos de endereço e a conclusão do onboarding.
+ */
 type OnboardingResponse = {
-  user: Omit<OnboardingUser, 'preferences'> & { preferences: OnboardingPreferences | null };
+  user: Omit<OnboardingUser, 'preferences' | AddressKey | 'onboarding_completed'> & {
+    preferences: OnboardingPreferences | null;
+    postal_code?: string | null;
+    street?: string | null;
+    neighborhood?: string | null;
+    city?: string | null;
+    state?: string | null;
+    onboarding_completed?: boolean;
+  };
 };
 
 const EMPTY_PREFERENCES: OnboardingPreferences = {
@@ -54,7 +73,11 @@ export type ProfileInput = {
   nickname: string;
   birth_date: string;
   gender_identity: GenderIdentity;
+  postal_code: string;
+  street: string;
+  neighborhood?: string | null;
   city: string;
+  state: string;
   latitude?: number | null;
   longitude?: number | null;
 };
@@ -80,7 +103,16 @@ async function request(
   options: { method?: 'PUT'; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<OnboardingUser> {
   const { user } = await api<OnboardingResponse>(`/v1/me/onboarding${path}`, options);
-  return { ...user, preferences: user.preferences ?? EMPTY_PREFERENCES };
+  return {
+    ...user,
+    preferences: user.preferences ?? EMPTY_PREFERENCES,
+    postal_code: user.postal_code ?? null,
+    street: user.street ?? null,
+    neighborhood: user.neighborhood ?? null,
+    city: user.city ?? null,
+    state: user.state ?? null,
+    onboarding_completed: user.onboarding_completed ?? false,
+  };
 }
 
 export function fetchOnboarding(signal?: AbortSignal): Promise<OnboardingUser> {
@@ -88,7 +120,15 @@ export function fetchOnboarding(signal?: AbortSignal): Promise<OnboardingUser> {
 }
 
 export function updateProfile(input: ProfileInput): Promise<OnboardingUser> {
-  return request('/profile', { method: 'PUT', body: input });
+  const { postal_code, neighborhood, latitude, longitude, ...profile } = input;
+  const body = {
+    ...profile,
+    postal_code: cepDigits(postal_code),
+    neighborhood: neighborhood?.trim() || null,
+    ...(latitude !== undefined ? { latitude } : {}),
+    ...(longitude !== undefined ? { longitude } : {}),
+  };
+  return request('/profile', { method: 'PUT', body });
 }
 
 export function updatePreferences(input: PreferencesInput): Promise<OnboardingUser> {

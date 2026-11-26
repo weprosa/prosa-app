@@ -123,6 +123,8 @@ Controle circular de ditado, independente da gravação. Props: `listening`, `bu
 - Mensagem de erro diz o problema e o que fazer: "Use pelo menos 8 caracteres."
 - Validação acontece ao enviar. Preencha sempre `autoComplete`, `textContentType`, `keyboardType` e `returnKeyType`, e encadeie o foco para o campo seguinte.
 - `iconAction` opcional torna o `icon` à esquerda tocável: recebe `onPress`, `accessibilityLabel` obrigatório, `disabled` e `busy`. Tem alvo de `sizes.touchTarget` (48), fundo `backgroundPressed` ao pressionar e indicador de atividade em `busy`, que também bloqueia novos toques. Sem `iconAction`, o ícone permanece decorativo e o comportamento anterior é preservado.
+- `action` opcional adiciona um botão independente de `icon`/`iconAction`, fora da caixa, à direita: recebe `icon` (nome Ionicons), `accessibilityLabel` obrigatório, `onPress`, `disabled` e `busy`. Campo e botão ficam em linha com `spacing.xs` entre eles; o rótulo fica acima e o erro abaixo do conjunto. Sem `action`, a renderização anterior é preservada.
+- O botão de `action` é quadrado de lado `sizes.field` (52), com altura mínima `sizes.touchTarget`, contorno `border`, cantos `radii.field` e fundo `background`, como o campo. Ícone de `sizes.fieldIcon` em `text`; pressionado usa `backgroundPressed`. `disabled` aplica opacidade de 45% e bloqueia toques; `busy` substitui o ícone por indicador em `primary` e também bloqueia toques. Expõe papel acessível `button`, rótulo da prop e estados `disabled` e `busy`.
 
 ### TextLink
 
